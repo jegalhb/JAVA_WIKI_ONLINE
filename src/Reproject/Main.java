@@ -5,17 +5,20 @@ import javax.swing.*;
 public class Main {
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
+
             try {
-                // 1. 데이터 저장소 준비
+                // 1. 데이터 전체를 저장할 곳을 만들자
                 ConceptRepository repository = new ConceptRepository();
 
-                // 2. 검색 서비스 준비 (유사도 알고리즘 포함)
+                // 2. 검색 서비스 용도
+                // UI와 데이터 사이에서 검색 기능을 독립적으로 처리하기 위해 사용함
                 SearchService searchService = new SearchService(repository);
 
                 // 3. 메인 화면 생성 및 실행
+                // 실제 사용자가 상호작용할 인터페이스를 띄우기 위한 기능
                 MainWikiFrame frame = new MainWikiFrame(searchService, repository);
 
-                // 화면을 표시합니다.
+                // 4. 화면 표시
                 frame.setVisible(true);
 
             } catch (Exception e) {

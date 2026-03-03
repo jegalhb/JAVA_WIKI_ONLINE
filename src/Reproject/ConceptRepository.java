@@ -3,10 +3,15 @@ package Reproject;
 import java.util.*;
 
 public class ConceptRepository {
+    //자바 지식데이터를 한곳에 모으기 위한  ConceptRepository 선언~
+    // 이후 findAll()이나 findMethodAll()을 통해 SearchService 및 MainWikiFrame으로 흘러감
+    // 전체 내용을 바꿀 수 있는 메소드관리!
     private Map<String, Concept> database = new HashMap<>();
 
     public ConceptRepository() {
+        // 내부 initData() -> initBasicConcepts() 등으로 실행 흐름
         initData();
+        initMethod();
     }
 
     private void initData() {
@@ -15,7 +20,21 @@ public class ConceptRepository {
         initAdvancedConcepts();     // 고급 (A101~A130)
     }
 
+    public List<Concept> findMethodAll() {
+        //메소드집합 버튼 클릭시 무조건 메소드 관련된것만 나오도록 하기 위한!
+        return database.values().
+                stream().filter(c->"메소드"
+                        .equals(c.getCategory()))
+                .sorted(Comparator.comparing(Concept::getTitle))
+                .toList();
+    }
+
+    private void initMethod(){
+        addConcept(new Concept("M01" ,"기본 메소드" ,"기초"));
+    }
+
     private void initBasicConcepts() {
+        //아래로부터 기초 중급 고급 자바 지식 넣는중 위 database로 이동
         addConcept(new Concept("B01", "기본 자료형(Primitive)", "기초")
                 .addLine("[설명] 자바에서 지원하는 가장 기본적인 데이터 타입으로, 메모리 효율을 위해 정해진 크기를 가진다.")
                 .addLine("• [메서드] Integer.toBinaryString(): 정수를 2진수 문자열로 변환하여 메모리 구조를 시각화한다.")
@@ -932,11 +951,12 @@ public class ConceptRepository {
                 .addLine("• [메서드] 필드명을 이름으로 하는 접근자 메서드를 자바가 자동으로 생성해준다.")
                 .addLine("[코드] public record Point(int x, int y) { }")
                 .addLine("[설명] 1. 생성자, Getter, equals, hashCode, toString을 컴파일러가 자동으로 생성한다.")
-                .addLine("[설명] 2. 불변 객체이므로 안전하며, 데이터 전달 목적이 명확해져 가독성이 상승한다.")
-                .addLine("[설명] 3. 지금은 깃을 실험중이에오")
-        );
+                .addLine("[설명] 2. 불변 객체이므로 안전하며, 데이터 전달 목적이 명확해져 가독성이 상승한다."));
     }
+
     private void addConcept(Concept c) {
+        //낱개 지식들을 Map으로관리하기 편하게 구성
+        // database에 접근 후 검색과도 접근할 수 있도록 구성
         database.put(c.getId(), c);
     }
 
@@ -945,6 +965,8 @@ public class ConceptRepository {
     }
 
     public List<Concept> findAll() {
+        // 프로그램 시작 시 초기 전체 목록을 제공하기 위함!
+        // Main클래스에서 화면 나올 시 MainWikiFrame으로 전달
         return new ArrayList<>(database.values());
     }
 }

@@ -24,7 +24,6 @@ public class Concept {
         return this;
     }
 
-    public void addTag(String tag) { this.tags.add(tag); }
     public String getId() { return id; }
     public String getTitle() { return title; }
     public String getCategory() { return category; }
