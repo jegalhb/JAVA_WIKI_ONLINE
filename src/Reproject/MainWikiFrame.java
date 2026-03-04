@@ -5,50 +5,41 @@ import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.util.List;
 
-/**
- * 프로그램의 메인 화면을 구성하고 사용자의 입력을 제어하는 클래스입니다.
- * 외부에서 생성된 SearchService(기능)와 ConceptRepository(데이터)를 주입받아 화면에 연결합니다.
- */
 public class MainWikiFrame extends JFrame {
     private SearchService searchService;
     private ConceptRepository repository;
+    private WikiClient client;
 
-    // 프로그램이 실행되는 동안 화면의 상태를 유지해야 하는 컴포넌트들입니다.
-    private JScrollPane scrollPane;          // 상세 내용이 길어질 때 스크롤을 제공하기 위함
-    private JList<Concept> resultList;       // 왼쪽 화면에 지식 목록을 나열하기 위함
-    private DefaultListModel<Concept> listModel; // JList에 데이터를 넣고 빼는 가방 역할을 수행함
-    private JTextField searchField;          // 사용자가 검색어를 입력하는 창
-    private String currentCategory;          // 현재 어떤 버튼(기초, 중급 등)이 눌려 있는지 기억함
+    private JScrollPane scrollPane;
+    private JList<Concept> resultList;
+    private DefaultListModel<Concept> listModel;
+    private JTextField searchField;
+    private String currentCategory = "전체";
+
+    private JTextArea chatArea;
+    private JTextField chatInput;
 
     public MainWikiFrame(SearchService searchService, ConceptRepository repository) {
         this.searchService = searchService;
         this.repository = repository;
 
-        // 프로그램의 전체적인 창 크기와 제목을 설정합니다.
-        // 초기 가로 크기를 1100으로 설정하여 버튼 5개가 잘리지 않고 비율에 맞게 배치되도록 유도합니다.
-        setTitle("Java Wiki - Responsive UI");
-        setSize(1100, 750);
+        setTitle("Java Wiki - 실시간 협업 시스템");
+        setSize(1100, 850);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLayout(new BorderLayout()); // 동서남북 배치를 위해 자바의 기본 레이아웃을 사용함
+        setLayout(new BorderLayout());
 
-        // 화면의 각 구역을 담당하는 메서드들을 순차적으로 실행하여 조립합니다.
-        initTopPanel();    // 검색바와 버튼 영역
-        initCenterPanel(); // 리스트와 상세 페이지 영역
-        initStatusBar();   // 하단 알림바 영역
+        initTopPanel();
+        initCenterPanel();
+        initStatusBar();
 
-        // 프로그램 시작 시 초기 전체 목록을 제공하기 위함!
-        // repository에서 가져온 전체 데이터를 updateList 메서드로 전달하여 화면을 채웁니다.
         updateList(repository.findAll());
-
-        // 실행 시 창이 모니터의 정중앙에 나타나도록 설정하여 사용자 편의성을 높임
         setLocationRelativeTo(null);
-
     }
 
-    /**
-     * 상단 검색바 패널을 초기화하는 로직입니다.
-     * 사용자가 검색어를 입력하고 엔터를 치거나 버튼을 누르는 '액션'이 발생하는 장소입니다.
-     */
+    public void setClient(WikiClient client) {
+        this.client = client;
+    }
+
     private void initTopPanel() {
         JPanel topPanel = new JPanel(new BorderLayout(10, 10));
         topPanel.setBorder(new EmptyBorder(15, 15, 15, 15));
@@ -57,27 +48,24 @@ public class MainWikiFrame extends JFrame {
         searchField = new JTextField();
         searchField.setFont(new Font("맑은 고딕", Font.PLAIN, 16));
 
-        // 1. [입력] 버튼들을 담을 바구니(Panel)를 만든다.
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
-        buttonPanel.setOpaque(false); // 배경색 투명하게 설정
+        buttonPanel.setOpaque(false);
 
-        // 2. 추가 버튼 생성
         JButton addBtn = new JButton("지식 추가/수정");
         addBtn.addActionListener(e -> new ConceptEditFrame(this, repository));
 
-        // 3. 삭제 버튼 생성 (붉은색으로 강조)
         JButton deleteBtn = new JButton("지식 삭제");
         deleteBtn.setBackground(new Color(231, 76, 60));
         deleteBtn.setForeground(Color.WHITE);
         deleteBtn.addActionListener(e -> {
-            Concept selected = resultList.getSelectedValue(); // 변수명 확인 완료
+            Concept selected = resultList.getSelectedValue();
             if (selected == null) {
                 JOptionPane.showMessageDialog(this, "삭제할 항목을 먼저 선택해주세요.");
                 return;
             }
-            int confirm = JOptionPane.showConfirmDialog(this, "'" + selected.getTitle() + "' 삭제할까요?", "삭제 확인", JOptionPane.YES_NO_OPTION);
-            if (confirm == JOptionPane.YES_OPTION) {
+            if (JOptionPane.showConfirmDialog(this, "'" + selected.getTitle() + "' 삭제할까요?", "삭제 확인", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
                 repository.deleteConcept(selected.getId());
+                if (client != null) client.send("DELETE", selected.getId());
                 refreshList();
             }
         });
@@ -85,8 +73,7 @@ public class MainWikiFrame extends JFrame {
         buttonPanel.add(addBtn);
         buttonPanel.add(deleteBtn);
 
-        // 검색창과 버튼들을 레이아웃에 배치.
-        topPanel.add(buttonPanel, BorderLayout.WEST); // 왼쪽에 버튼 모음 배치
+        topPanel.add(buttonPanel, BorderLayout.WEST);
         topPanel.add(searchField, BorderLayout.CENTER);
 
         JButton searchButton = new JButton("검색");
@@ -96,183 +83,126 @@ public class MainWikiFrame extends JFrame {
         add(topPanel, BorderLayout.NORTH);
     }
 
-    /**
-     * 외부에서 데이터가 변경되었을 때 호출하는 메서드준비.
-     */
+    public void appendChat(String msg) {
+        SwingUtilities.invokeLater(() -> {
+            if (chatArea != null) {
+                chatArea.append(msg + "\n");
+                chatArea.setCaretPosition(chatArea.getDocument().getLength());
+            }
+        });
+    }
+
     public void refreshList() {
-        // 현재 선택된 카테고리를 유지하며 리스트를 다시 그린다.
         filterList(currentCategory != null ? currentCategory : "전체");
     }
 
-    /**
-     * 화면의 중앙부 중 왼쪽 영역(필터 버튼과 지식 목록)을 초기화하는 로직.
-     * 사용자의 클릭 한 번이 어떤 데이터 필터링을 거쳐 리스트에 나타나는지 결정.
-     */
     private void initCenterPanel() {
-        // 왼쪽 전체를 감싸는 패널로, 상단에는 버튼을 아래에는 목록을 배치하기 위해 BorderLayout을 사용함
         JPanel leftPanel = new JPanel(new BorderLayout());
-
-        // 5개의 카테고리 버튼이 창 너비에 맞춰 동일한 비율로 가로 배치되도록 설정함
-        // 1행 5열 구조로 고정하여 창을 전체화면으로 키워도 버튼들이 균형 있게 늘어나도록 유도함
         JPanel filterPanel = new JPanel(new GridLayout(1, 5, 5, 5));
         filterPanel.setBorder(new EmptyBorder(5, 5, 5, 5));
 
-        // 반복문을 사용하여 버튼 생성 로직을 간결하게 만들고 공통 스타일을 일괄 적용함
         String[] categories = {"전체", "기초", "중급", "고급", "메소드"};
         for (String cat : categories) {
             JButton btn = new JButton(cat);
-
-            // 좁은 창에서도 글자가 잘려 '...'으로 표시되는 현상을 방지하기 위해 폰트와 여백을 최적화함
             btn.setFont(new Font("맑은 고딕", Font.BOLD, 12));
-            btn.setMargin(new Insets(2, 2, 2, 2));
-
-
-            // 버튼 클릭 시 발생하는 데이터 흐름을 정의함
-            // 사용자가 누른 버튼의 텍스트(cat)에 따라 repository에서 서로 다른 리스트를 가져와 화면을 갱신함
             btn.addActionListener(e -> {
-                currentCategory = cat; // 현재 어떤 필터가 활성 상태인지 기억함
-                if (cat.equals("메소드 집합")) {
-                    // 메소드 전용 조회 메서드를 호출하여 결과값을 왼쪽 리스트 모델로 전달함
-                    updateList(repository.findMethodAll());
-                } else {
-                    // 일반 카테고리 필터 로직으로 이동하여 해당 조건의 데이터만 추출함
-                    filterList(cat);
-                }
+                currentCategory = cat;
+                filterList(cat);
             });
             filterPanel.add(btn);
         }
-        // 완성된 버튼 패널을 왼쪽 구역의 최상단에 고정함
         leftPanel.add(filterPanel, BorderLayout.NORTH);
 
-        // 실제 지식 제목들이 담기는 데이터 가방(Model)과 화면 컴포넌트(JList)를 생성함
         listModel = new DefaultListModel<>();
         resultList = new JList<>(listModel);
         resultList.setFont(new Font("맑은 고딕", Font.PLAIN, 14));
-
-        // 목록에서 특정 항목을 마우스로 클릭했을 때 발생하는 이벤트 로직임
-        // 사용자가 선택한 Concept 객체를 추출하여 우측 상세 보기 메서드(displayDetail)로 전달함
         resultList.addListSelectionListener(e -> {
-            // 마우스 클릭이 완료된 최종 상태일 때만 상세 내용을 갱신하도록 제어함
             if (!e.getValueIsAdjusting()) displayDetail(resultList.getSelectedValue());
         });
 
-        // 목록이 길어질 경우를 대비해 스크롤 기능을 추가하고 영역의 제목을 표시함
-        JScrollPane leftScroll = new JScrollPane(resultList);
-        leftScroll.setBorder(BorderFactory.createTitledBorder("지식 인덱스"));
+        leftPanel.add(new JScrollPane(resultList), BorderLayout.CENTER);
 
-        // 최종적으로 버튼 아래 공간을 리스트가 가득 채우도록 중앙(CENTER)에 배치함
-        leftPanel.add(leftScroll, BorderLayout.CENTER);
-
-        // 사용자가 지식을 선택하기 전, 우측 화면에 표시될 초기 안내 패널을 생성함
-        // GridBagLayout을 사용하여 "카테고리를 선택..." 문구를 화면 중앙에 배치함
-        JPanel welcomePanel = new JPanel(new GridBagLayout());
-        welcomePanel.setBackground(Color.WHITE);
-        welcomePanel.add(new JLabel("카테고리를 선택하거나 검색해 주세요."));
-
-        // 상세 내용이 길어질 때를 대비하여 스크롤 기능을 장착하고 영역 제목을 부여함
-        scrollPane = new JScrollPane(welcomePanel);
+        JPanel rightPanel = new JPanel(new BorderLayout(0, 10));
+        scrollPane = new JScrollPane(new JLabel("카테고리를 선택하거나 검색해 주세요.", SwingConstants.CENTER));
         scrollPane.setBorder(BorderFactory.createTitledBorder("상세 지식"));
+        rightPanel.add(scrollPane, BorderLayout.CENTER);
 
-        // 왼쪽의 리스트 영역(leftPanel)과 오른쪽의 상세창(scrollPane)을 좌우로 배치함
-        JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, leftPanel, scrollPane);
+        JPanel chatPanel = new JPanel(new BorderLayout());
+        chatPanel.setPreferredSize(new Dimension(0, 200));
+        chatPanel.setBorder(BorderFactory.createTitledBorder("실시간 협업 채팅"));
 
-        // 사용자가 창 크기를 전체 화면으로 키울 때, 각 영역이 늘어나는 비율을 결정함
-        // 0.3으로 설정하여 왼쪽 리스트 영역도 30%만큼 함께 커지게 유도함
+        chatArea = new JTextArea();
+        chatArea.setEditable(false);
+        chatArea.setText(">> 서버 연결 정보를 입력받는 중입니다...\n");
+
+        chatInput = new JTextField();
+        chatInput.addActionListener(e -> {
+            String msg = chatInput.getText().trim();
+            if (!msg.isEmpty() && client != null) {
+                client.send("CHAT", "[나]: " + msg);
+                chatInput.setText("");
+            }
+        });
+
+        chatPanel.add(new JScrollPane(chatArea), BorderLayout.CENTER);
+        chatPanel.add(chatInput, BorderLayout.SOUTH);
+        rightPanel.add(chatPanel, BorderLayout.SOUTH);
+
+        JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, leftPanel, rightPanel);
         splitPane.setResizeWeight(0.3);
-        splitPane.setDividerLocation(320); // 초기 실행 시 구분선의 위치를 지정함
+        splitPane.setDividerLocation(320);
 
-        // 완성된 레이아웃을 프레임의 중앙(CENTER)에 배치하여 화면 전체를 채우게 함
         add(splitPane, BorderLayout.CENTER);
     }
 
-    /**
-     * 프로그램 하단에 현재 상태를 간략히 보여주는 상태바를 생성함
-     * 사용자가 프로그램을 실행했을 때 준비 완료 메시지를 띄워 안정감을 줌
-     */
-    private void initStatusBar() {
-        JPanel statusPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        statusPanel.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, Color.LIGHT_GRAY));
-        statusPanel.add(new JLabel("자바 학습 도우미가 준비되었습니다."));
-        add(statusPanel, BorderLayout.SOUTH); // 프레임의 최하단에 배치함
-    }
-
-    /**
-     * 선택된 지식(Concept) 객체를 받아와서 우측 상세 패널에 그려넣음
-     * 문자열 데이터를 폰트, 색상, 정렬 등을 통해 시각적인 문서 형태로 변환함
-     */
     private void displayDetail(Concept selected) {
         if (selected == null) return;
 
-        // 내용을 위에서 아래로 차례대로 쌓기 위해 BoxLayout을 사용함
         JPanel detailPanel = new JPanel();
         detailPanel.setLayout(new BoxLayout(detailPanel, BoxLayout.Y_AXIS));
         detailPanel.setBackground(Color.WHITE);
         detailPanel.setBorder(BorderFactory.createEmptyBorder(20, 40, 30, 40));
 
-        // 지식의 제목을 가장 크고 굵게 출력!
         JLabel titleLabel = new JLabel(selected.getTitle());
         titleLabel.setFont(new Font("맑은 고딕", Font.BOLD, 28));
         titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
         detailPanel.add(titleLabel);
+        detailPanel.add(Box.createVerticalStrut(2));
 
-        detailPanel.add(Box.createVerticalStrut(2)); // 제목과 분류 사이의 미세한 간격 조절
-
-        // 현재 지식이 어떤 그룹(기초/중급 등)에 속하는지 색상 포인트를 주어 표시함
         JLabel catLabel = new JLabel("분류: " + selected.getCategory());
-        catLabel.setForeground(new Color(52, 152, 219)); // 전문적인 느낌의 파란색 적용
+        catLabel.setForeground(new Color(52, 152, 219));
         catLabel.setFont(new Font("맑은 고딕", Font.BOLD, 13));
-        catLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
         detailPanel.add(catLabel);
-
         detailPanel.add(Box.createVerticalStrut(8));
 
-        // 제목 영역과 본문 영역을 시각적으로 분리하기 위해 가로 구분선을 추가함
         JSeparator sep = new JSeparator(JSeparator.HORIZONTAL);
         sep.setMaximumSize(new Dimension(Integer.MAX_VALUE, 1));
-        sep.setAlignmentX(Component.LEFT_ALIGNMENT);
         detailPanel.add(sep);
-
         detailPanel.add(Box.createVerticalStrut(10));
 
-        // Concept 객체 내부에 저장된 여러 줄의 설명 데이터를 순회하며 화면에 배치함
         for (String line : selected.getDescriptionLines()) {
             JLabel label = new JLabel();
             label.setAlignmentX(Component.LEFT_ALIGNMENT);
-
             if (line.startsWith("[H2]")) {
-                // 소제목 처리
                 label.setText(line.replace("[H2] ", ""));
                 label.setFont(new Font("맑은 고딕", Font.BOLD, 19));
                 label.setForeground(new Color(44, 62, 80));
                 detailPanel.add(Box.createVerticalStrut(10));
             } else if (line.startsWith("[코드]")) {
-                String codeText = line.replace("[코드] ", "");
-                label.setText(codeText);
+                label.setText(line.replace("[코드] ", ""));
                 label.setForeground(Color.BLUE);
-                // Consolas 대신 한글이 지원되는 'D2Coding'이나 '맑은 고딕'을 혼용합니다.
                 label.setFont(new Font("맑은 고딕", Font.BOLD, 15));
-            } else if (line.startsWith("[설명]")) {
+            } else {
                 label.setText(line.replace("[설명] ", ""));
                 label.setFont(new Font("맑은 고딕", Font.PLAIN, 15));
-            } else {
-                label.setText(line);
-                label.setFont(new Font("맑은 고딕", Font.PLAIN, 15));
             }
-
             detailPanel.add(label);
             detailPanel.add(Box.createVerticalStrut(7));
         }
 
-        // 내용이 적을 경우 본문을 위로 밀어올려 배치를 깔끔하게 유지함
         detailPanel.add(Box.createVerticalGlue());
-
-        // 완성된 상세 패널을 화면 우측 스크롤 영역에 장착함
         scrollPane.setViewportView(detailPanel);
-
-        // 새로운 지식을 클릭할 때마다 스크롤바가 항상 맨 위를 가리키도록 하여 사용자 경험을 개선함
         SwingUtilities.invokeLater(() -> scrollPane.getVerticalScrollBar().setValue(0));
-
-        // 컴포넌트 재배치를 즉시 반영하여 화면에 나타냄
         scrollPane.revalidate();
         scrollPane.repaint();
     }
@@ -280,36 +210,32 @@ public class MainWikiFrame extends JFrame {
     private void filterList(String category) {
         List<Concept> all = repository.findAll();
         listModel.clear();
-
         for (Concept c : all) {
             if (category.equals("전체")) {
-                // 전체를 선택했을 때는 '메소드' 카테고리가 아닌 것들만 리스트에 추가한다.
-                if (!c.getCategory().equals("메소드")) {
-                    listModel.addElement(c);
-                }
+                if (!c.getCategory().equals("메소드")) listModel.addElement(c);
             } else if (c.getCategory().equals(category)) {
-                // 기초, 중급, 고급 등 특정 카테고리를 선택했을 때 해당 데이터만 추가한다.
                 listModel.addElement(c);
             }
         }
     }
 
-    /**
-     * 검색창 입력을 처리하며, SearchService로 데이터를 보낸 후 결과 리스트를 화면에 반영함
-     */
     private void performSearch() {
-        String query = searchField.getText();
-        updateList(searchService.search(query));
+        updateList(searchService.search(searchField.getText()));
     }
 
-    /**
-     * 외부에서 받은 데이터 리스트를 화면 왼쪽의 JList 모델에 실시간으로 동기화함
-     * 이 메서드는 모든 목록 변경(검색, 필터링 등)의 최종 실행 지점임
-     */
-    private void updateList(List<Concept> concepts) {
-        listModel.clear();
-        for (Concept c : concepts) {
-            listModel.addElement(c);
-        }
+    public void updateList(List<Concept> concepts) {
+        SwingUtilities.invokeLater(() -> {
+            listModel.clear();
+            for (Concept c : concepts) listModel.addElement(c);
+        });
+    }
+
+    private void initStatusBar() {
+        add(new JLabel(" 시스템 가동 중"), BorderLayout.SOUTH);
+    }
+
+    public void onDataAdded(Concept c) {
+        if (client != null) client.send("ADD", c);
+        refreshList();
     }
 }
