@@ -1274,10 +1274,14 @@ public class ConceptRepository {
                 .addLine("[설명] 2. 불변 객체이므로 안전하며, 데이터 전달 목적이 명확해져 가독성이 상승한다."));
     }
 
-    private void addConcept(Concept c) {
+    public void addConcept(Concept c) {
         //낱개 지식들을 Map으로관리하기 편하게 구성
         // database에 접근 후 검색과도 접근할 수 있도록 구성
         database.put(c.getId(), c);
+    }
+    // [저장/삭제] 특정 ID의 데이터를 저장소에서 영구히 제거한다.
+    public void deleteConcept(String id) {
+        database.remove(id);
     }
 
     public Concept findById(String id) {

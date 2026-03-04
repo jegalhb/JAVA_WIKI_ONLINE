@@ -42,6 +42,7 @@ public class MainWikiFrame extends JFrame {
 
         // 실행 시 창이 모니터의 정중앙에 나타나도록 설정하여 사용자 편의성을 높임
         setLocationRelativeTo(null);
+
     }
 
     /**
@@ -49,27 +50,59 @@ public class MainWikiFrame extends JFrame {
      * 사용자가 검색어를 입력하고 엔터를 치거나 버튼을 누르는 '액션'이 발생하는 장소입니다.
      */
     private void initTopPanel() {
-        // 컴포넌트 간의 간격을 10픽셀씩 주어 시각적으로 답답하지 않게 구성함
         JPanel topPanel = new JPanel(new BorderLayout(10, 10));
-        topPanel.setBorder(new EmptyBorder(15, 15, 15, 15)); // 패널 안쪽에 여백을 줌
-        topPanel.setBackground(new Color(236, 240, 241)); // 소프트한 회색 배경색 적용
+        topPanel.setBorder(new EmptyBorder(15, 15, 15, 15));
+        topPanel.setBackground(new Color(236, 240, 241));
 
         searchField = new JTextField();
         searchField.setFont(new Font("맑은 고딕", Font.PLAIN, 16));
 
-        // 사용자가 검색 버튼을 누르거나 텍스트창에서 엔터를 치면 performSearch() 메서드로 이동함
-        // SearchService의 검색 알고리즘을 가동하게 만드는 트리거
+        // 1. [입력] 버튼들을 담을 바구니(Panel)를 만든다.
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        buttonPanel.setOpaque(false); // 배경색 투명하게 설정
+
+        // 2. 추가 버튼 생성
+        JButton addBtn = new JButton("지식 추가/수정");
+        addBtn.addActionListener(e -> new ConceptEditFrame(this, repository));
+
+        // 3. 삭제 버튼 생성 (붉은색으로 강조)
+        JButton deleteBtn = new JButton("지식 삭제");
+        deleteBtn.setBackground(new Color(231, 76, 60));
+        deleteBtn.setForeground(Color.WHITE);
+        deleteBtn.addActionListener(e -> {
+            Concept selected = resultList.getSelectedValue(); // 변수명 확인 완료
+            if (selected == null) {
+                JOptionPane.showMessageDialog(this, "삭제할 항목을 먼저 선택해주세요.");
+                return;
+            }
+            int confirm = JOptionPane.showConfirmDialog(this, "'" + selected.getTitle() + "' 삭제할까요?", "삭제 확인", JOptionPane.YES_NO_OPTION);
+            if (confirm == JOptionPane.YES_OPTION) {
+                repository.deleteConcept(selected.getId());
+                refreshList();
+            }
+        });
+
+        // 4. [중요] 버튼들을 바구니에 담는다.
+        buttonPanel.add(addBtn);
+        buttonPanel.add(deleteBtn);
+
+        // 5. 검색창과 버튼들을 레이아웃에 배치한다.
+        topPanel.add(buttonPanel, BorderLayout.WEST); // 왼쪽에 버튼 모음 배치
+        topPanel.add(searchField, BorderLayout.CENTER);
+
         JButton searchButton = new JButton("검색");
         searchButton.addActionListener(e -> performSearch());
-        searchField.addActionListener(e -> performSearch());
-
-        // 각 컴포넌트를 레이아웃의 정해진 위치에 배치하여 상단바 UI를 완성함
-        topPanel.add(new JLabel("지식 검색: "), BorderLayout.WEST);
-        topPanel.add(searchField, BorderLayout.CENTER);
         topPanel.add(searchButton, BorderLayout.EAST);
 
-        // 완성된 패널을 프레임의 북쪽(NORTH) 영역에 고정하여 상단에 위치시킴
         add(topPanel, BorderLayout.NORTH);
+    }
+
+    /**
+     * [출력 갱신] 외부에서 데이터가 변경되었을 때 호출하는 메서드이다.
+     */
+    public void refreshList() {
+        // 현재 선택된 카테고리를 유지하며 리스트를 다시 그린다.
+        filterList(currentCategory != null ? currentCategory : "전체");
     }
 
     /**
