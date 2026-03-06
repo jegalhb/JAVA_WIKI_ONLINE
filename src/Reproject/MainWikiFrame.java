@@ -77,8 +77,10 @@ public class MainWikiFrame extends JFrame {
         topPanel.add(searchField, BorderLayout.CENTER);
 
         JButton searchButton = new JButton("검색");
+        // 버튼 클릭과 Enter 입력이 같은 검색 메서드를 타게 해서 동작을 일관되게 유지한다.
         searchButton.addActionListener(e -> performSearch());
-        searchField.addActionListener(e -> performSearch()); // 엔터로 검색시 가능하도록
+        searchField.addActionListener(e -> performSearch());
+        // 포커스가 검색창 밖에 있어도 Enter가 검색 버튼 액션으로 연결된다.
         getRootPane().setDefaultButton(searchButton);
         topPanel.add(searchButton, BorderLayout.EAST);
 
@@ -141,7 +143,8 @@ public class MainWikiFrame extends JFrame {
         chatInput.addActionListener(e -> {
             String msg = chatInput.getText().trim();
             if (!msg.isEmpty() && client != null) {
-                client.send("CHAT", "[나]: " + msg);
+                // 닉네임 접두사는 WikiClient에서만 붙인다(중복 [나] 방지).
+                client.send("CHAT", msg);
                 chatInput.setText("");
             }
         });
@@ -222,7 +225,9 @@ public class MainWikiFrame extends JFrame {
     }
 
     private void performSearch() {
-        updateList(searchService.search(searchField.getText()));
+        // 앞뒤 공백을 제거해 Enter/버튼 검색 결과가 항상 동일하게 나오도록.
+        String keyword = searchField.getText().trim();
+        updateList(searchService.search(keyword));
     }
 
     public void updateList(List<Concept> concepts) {
@@ -232,11 +237,28 @@ public class MainWikiFrame extends JFrame {
         });
     }
 
+    public void applyServerData(List<Concept> concepts) {
+        // 서버의 최신 전체 목록으로 로컬 저장소를 먼저 맞춰야 이후 검색/필터도 최신 데이터 기준이 된다.
+        repository.replaceAll(concepts);
+        SwingUtilities.invokeLater(() -> {
+            String keyword = searchField != null ? searchField.getText().trim() : "";
+            // 사용자가 검색 중이면 검색 결과 상태를 유지, 아니면 카테고리 필터 상태를 유지한다.
+            if (!keyword.isEmpty()) {
+                updateList(searchService.search(keyword));
+            } else {
+                refreshList();
+            }
+        });
+    }
+
     private void initStatusBar() {
         add(new JLabel(" 시스템 가동 중"), BorderLayout.SOUTH);
     }
 
     public void onDataAdded(Concept c) {
+        // 오프라인 상태에서도 즉시 반영되도록 로컬 저장소에 먼저 저장한다.
+        repository.addConcept(c);
+        // 온라인이면 서버에 동일 이벤트를 보내 다른 클라이언트도 갱신되게 한다.
         if (client != null) client.send("ADD", c);
         refreshList();
     }

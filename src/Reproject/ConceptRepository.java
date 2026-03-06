@@ -1274,10 +1274,19 @@ public class ConceptRepository {
                 .addLine("[설명] 2. 불변 객체이므로 안전하며, 데이터 전달 목적이 명확해져 가독성이 상승한다."));
     }
 
-    public void addConcept(Concept c) {
+    // UI 스레드와 네트워크 수신 스레드가 동시에 접근할 수 있어 동기화로 경합을 줄인다.
+    public synchronized void addConcept(Concept c) {
         //낱개 지식들을 Map으로관리하기 편하게 구성
         // database에 접근 후 검색과도 접근할 수 있도록 구성
         database.put(c.getId(), c);
+    }
+
+    // 서버가 보낸 스냅샷으로 로컬 저장소를 통째로 교체해 클라이언트 간 데이터 차이를 제거한다.
+    public synchronized void replaceAll(List<Concept> concepts) {
+        database.clear();
+        for (Concept c : concepts) {
+            database.put(c.getId(), c);
+        }
     }
     // [저장/삭제] 특정 ID의 데이터를 저장소에서 영구히 제거한다.
     public void deleteConcept(String id) {

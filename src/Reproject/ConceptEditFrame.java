@@ -86,10 +86,8 @@ public class ConceptEditFrame extends JFrame {
 
         // 3. 저장 (Storage): 조립된 객체를 데이터 창고(Map)에 최종 반영한다.
         // [영향] 동일한 ID가 있다면 수정(Update), 없다면 새로운 지식이 추가(Insert)된다.
-        repository.addConcept(newConcept);
-
-        // 4. 출력 (Output): 변경된 창고의 상태를 메인 리스트에 다시 그린다.
-        mainFrame.refreshList();
+        // 저장/전파 경로를 한 곳(onDataAdded)으로 통일해 로컬 반영과 소켓 전송이 항상 같이 일어난다.
+        mainFrame.onDataAdded(newConcept);
         JOptionPane.showMessageDialog(this, "성공적으로 반영되었습니다.");
         dispose(); // [이동] 작업 완료 후 입력 프레임 메모리 해제 및 종료
     }
