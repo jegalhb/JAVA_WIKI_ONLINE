@@ -3,6 +3,8 @@ package Reproject;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.util.List;
 
 public class MainWikiFrame extends JFrame {
@@ -34,6 +36,13 @@ public class MainWikiFrame extends JFrame {
 
         updateList(repository.findAll());
         setLocationRelativeTo(null);
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosed(WindowEvent e) {
+                super.windowClosed(e);
+                repository.save();
+            }
+        });
     }
 
     public void setClient(WikiClient client) {
