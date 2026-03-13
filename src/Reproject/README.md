@@ -663,3 +663,108 @@ flowchart TD
     P --> W[카테고리 열린 상태 유지 + 결과 재렌더]
     W --> G
 ```
+### F. 마지막 슬라이드 (캡처용: Before vs After + KPI)
+
+```mermaid
+flowchart LR
+    subgraph LEFT[기존 방식 (Before)]
+      direction TB
+      L1[카테고리별 버튼 분산]
+      L2[data.txt 저장]
+      L3[검색 후 수동 탐색]
+      L1 --> L2 --> L3
+    end
+
+    MID([개선 작업])
+
+    subgraph RIGHT[개선 방식 (After)]
+      direction TB
+      R1[콤보박스 단일화]
+      R2[data.json 구조 저장]
+      R3[자동완성 + 검색결과 노드]
+      R1 --> R2 --> R3
+    end
+
+    LEFT --> MID --> RIGHT
+
+    classDef before fill:#fff1f2,stroke:#be123c,color:#881337,stroke-width:1.8px;
+    classDef after fill:#ecfeff,stroke:#0e7490,color:#134e4a,stroke-width:1.8px;
+    classDef mid fill:#f8fafc,stroke:#334155,color:#0f172a,stroke-width:1.8px;
+
+    class L1,L2,L3 before;
+    class R1,R2,R3 after;
+    class MID mid;
+```
+
+```mermaid
+flowchart LR
+    K1([저장 구조\nTXT → JSON])
+    K2([검색 경로\n추천 단건 매칭])
+    K3([입력 안정성\nIME 끊김 해결])
+
+    classDef kpi1 fill:#eff6ff,stroke:#1d4ed8,color:#1e3a8a,stroke-width:2px;
+    classDef kpi2 fill:#ecfdf5,stroke:#15803d,color:#14532d,stroke-width:2px;
+    classDef kpi3 fill:#fff7ed,stroke:#c2410c,color:#7c2d12,stroke-width:2px;
+
+    class K1 kpi1;
+    class K2 kpi2;
+    class K3 kpi3;
+```
+
+발표용 한 줄 설명(캡처 하단 문구):
+- 기존의 버튼 분산/TXT 구조를 콤보박스+JSON 기반으로 전환하고, 자동완성과 검색결과 노드 중심 UX로 탐색 속도와 입력 안정성을 함께 개선했습니다.
+### G. 마지막 슬라이드 (대형 캡처용: 고가독성 비교 버전)
+
+```mermaid
+flowchart LR
+    subgraph BL[기존 방식 (Before)]
+      direction TB
+      BL1[카테고리 버튼 분산]
+      BL2[data.txt 저장]
+      BL3[검색 후 수동 탐색]
+      BL1 --> BL2 --> BL3
+    end
+
+    BM([개선])
+
+    subgraph BR[개선 방식 (After)]
+      direction TB
+      BR1[콤보박스 단일화]
+      BR2[data.json 구조 저장]
+      BR3[자동완성 + 검색결과 노드]
+      BR1 --> BR2 --> BR3
+    end
+
+    BL --> BM --> BR
+
+    classDef before fill:#ffe4e6,stroke:#be123c,color:#881337,stroke-width:2.8px,font-size:20px,font-weight:bold;
+    classDef after fill:#ccfbf1,stroke:#0f766e,color:#134e4a,stroke-width:2.8px,font-size:20px,font-weight:bold;
+    classDef mid fill:#f1f5f9,stroke:#1e293b,color:#0f172a,stroke-width:2.8px,font-size:22px,font-weight:bold;
+
+    class BL1,BL2,BL3 before;
+    class BR1,BR2,BR3 after;
+    class BM mid;
+
+    style BL fill:#fff1f2,stroke:#be123c,stroke-width:2px
+    style BR fill:#ecfeff,stroke:#0e7490,stroke-width:2px
+```
+
+```mermaid
+flowchart LR
+    P1([저장 구조\nTXT → JSON])
+    P2([검색 경로\n추천 단건 매칭])
+    P3([입력 안정성\nIME 끊김 해결])
+
+    classDef b1 fill:#dbeafe,stroke:#1d4ed8,color:#1e3a8a,stroke-width:3px,font-size:22px,font-weight:bold;
+    classDef b2 fill:#dcfce7,stroke:#15803d,color:#14532d,stroke-width:3px,font-size:22px,font-weight:bold;
+    classDef b3 fill:#ffedd5,stroke:#c2410c,color:#7c2d12,stroke-width:3px,font-size:22px,font-weight:bold;
+
+    class P1 b1;
+    class P2 b2;
+    class P3 b3;
+```
+
+캡처 팁 (대형 버전):
+- 브라우저 확대율 `150%` 기준으로 캡처
+- 캡처 후 PPT에서는 `축소`만 사용
+- 다이어그램 한 개당 슬라이드 1/2 이상 크기로 배치
