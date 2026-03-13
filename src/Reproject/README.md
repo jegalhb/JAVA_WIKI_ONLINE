@@ -248,13 +248,12 @@ sequenceDiagram
 
 #### 5-9-1. 시작부터 종료까지 전체 분기 상세도
 ```mermaid
-flowchart LR
+flowchart TD
     A([시작]) --> B([연결 확인])
     B --> C{온라인 모드인가}
 
     C -- 예 --> D[서버 연결 및 동기화 데이터 수신]
     C -- 아니오 --> E[로컬 JSON 로드]
-
     D --> F[메인 화면 진입]
     E --> F
 
@@ -262,17 +261,16 @@ flowchart LR
     G --> H[자동완성 갱신<br/>문서 변경 감지 + 디바운스]
     H --> I{추천 항목 존재 여부}
 
-    I -- 아니오 --> J[일반 검색 실행<br/>performSearch]
-    I -- 예 --> K{추천 선택 여부}
+    I -- 예 --> J{추천 선택 여부}
+    J -- 예 --> K[선택 항목 1건 표시<br/>acceptSuggestionSelection]
+    J -- 아니오 --> L[일반 검색 실행<br/>performSearch]
+    I -- 아니오 --> L
 
-    K -- 예 --> L[선택 항목 1건 표시<br/>acceptSuggestionSelection]
-    K -- 아니오 --> J
-
-    J --> M{검색 결과 존재 여부}
+    L --> M{검색 결과 존재 여부}
     M -- 예 --> N[검색결과 노드 렌더링<br/>renderTree searchMode true]
     M -- 아니오 --> O[유사 항목 안내<br/>getBestMatch]
 
-    L --> P[상세 패널 표시<br/>displayDetail]
+    K --> P[상세 패널 표시<br/>displayDetail]
     N --> P
     O --> G
 
@@ -294,8 +292,8 @@ flowchart LR
     classDef warn fill:#fdecec,stroke:#b33939,color:#7a1f1f,stroke-width:1.2px;
 
     class A,R startEnd;
-    class B,D,E,F,G,H,J,L,N,P,S,U,V,W process;
-    class C,I,K,M,Q,T decision;
+    class B,D,E,F,G,H,K,L,N,P,S,U,V,W process;
+    class C,I,J,M,Q,T decision;
     class O warn;
 ```
 
