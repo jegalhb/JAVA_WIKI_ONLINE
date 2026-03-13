@@ -534,3 +534,132 @@ flowchart TD
     Q --> R
     R --> F
 ```
+### C. 로직 프로세스 (예시 스타일 반영, PPT 캡처용)
+```mermaid
+flowchart LR
+    %% 시작/연결
+    S([시작]) --> C0([연결 확인])
+    C0 --> P0[메인 페이지 진입]
+
+    %% 입력/추천 단계
+    P0 --> I1[/검색어 입력/]
+    I1 --> A1[추천 목록 생성]
+    A1 --> D1{추천 항목 선택?}
+    D1 -- 예 --> R1[선택 항목 단일 결과 표시]
+    D1 -- 아니오 --> R2[일반 검색 결과 표시]
+
+    %% 상세/작업 단계
+    R1 --> V1[상세 보기]
+    R2 --> V1
+    V1 --> D2{CRUD 실행?}
+    D2 -- 아니오 --> E([종료])
+    D2 -- 예 --> P1[저장 처리]
+
+    %% 저장 분기 (온라인/오프라인)
+    P1 --> D3{온라인 모드?}
+    D3 -- 예 --> DB1[(서버 DB 반영)]
+    D3 -- 아니오 --> DB2[(로컬 JSON 반영)]
+    DB1 --> U1[목록 갱신]
+    DB2 --> U1
+    U1 --> I1
+
+    %% 스타일 (예시 그림과 유사한 도형 톤)
+    classDef startEnd fill:#f4f7f9,stroke:#1f2933,color:#111827,stroke-width:2px;
+    classDef page fill:#ffffff,stroke:#111827,color:#111827,stroke-width:2px;
+    classDef input fill:#ffffff,stroke:#111827,color:#111827,stroke-width:2px;
+    classDef decision fill:#eef6ff,stroke:#1d4e89,color:#0b2f57,stroke-width:2px;
+    classDef process fill:#f8fafc,stroke:#111827,color:#111827,stroke-width:2px;
+    classDef db fill:#fff7ed,stroke:#9a3412,color:#7c2d12,stroke-width:2px;
+
+    class S,E,C0 startEnd;
+    class P0,A1,R1,R2,V1,P1,U1 process;
+    class I1 input;
+    class D1,D2,D3 decision;
+    class DB1,DB2 db;
+```
+### D. 로직 프로세스 (예시 레이아웃 최대 유사 버전, 비교용)
+```mermaid
+flowchart LR
+    %% 좌측 메인 흐름 (예시와 유사하게 세로 체인)
+    subgraph L[ ]
+      direction TB
+      L0([시작]) --> L1([연결])
+      L1 --> L2[메인 페이지]
+      L2 --> L3[/검색어 입력/]
+      L3 --> L4[검색 결과 페이지]
+      L4 --> L5[/상세/작업 입력/]
+      L5 --> L6{검증 통과?}
+      L6 -- 예 --> L7[처리]
+      L6 -- 아니오 --> L5
+      L7 --> L8{CRUD 요청?}
+      L8 -- 예 --> L9[저장 처리]
+      L8 -- 아니오 --> L10([종료])
+    end
+
+    %% 중앙 저장소/판단 구간
+    L3 -. 추천 후보 생성 .-> DB0[(추천 인덱스)]
+    L5 -. 변경 데이터 .-> DB0
+
+    L9 --> D1{온라인 모드?}
+    D1 -- 예 --> DB1[(서버 DB)]
+    D1 -- 아니오 --> DB2[(로컬 JSON)]
+
+    %% 우측 후처리/종료 구간
+    DB1 --> P1[목록 갱신]
+    DB2 --> P1
+    P1 --> D2{추가 탐색?}
+    D2 -- 예 --> L3
+    D2 -- 아니오 --> L10
+
+    %% 스타일
+    classDef startEnd fill:#f3f4f6,stroke:#111827,color:#111827,stroke-width:2px;
+    classDef page fill:#ffffff,stroke:#111827,color:#111827,stroke-width:2px;
+    classDef input fill:#ffffff,stroke:#111827,color:#111827,stroke-width:2px;
+    classDef decision fill:#eef6ff,stroke:#1d4e89,color:#0b2f57,stroke-width:2px;
+    classDef process fill:#f8fafc,stroke:#111827,color:#111827,stroke-width:2px;
+    classDef db fill:#fff7ed,stroke:#9a3412,color:#7c2d12,stroke-width:2px;
+
+    class L0,L1,L10 startEnd;
+    class L2,L4,L7,L9,P1 process;
+    class L3,L5 input;
+    class L6,L8,D1,D2 decision;
+    class DB0,DB1,DB2 db;
+```
+
+### E. 로직 프로세스 (Codex 제안형, 운영 관점 최적화 버전)
+```mermaid
+flowchart TD
+    A([시작]) --> B[초기화: 모드/설정/데이터 소스 결정]
+    B --> C{온라인 모드}
+    C -- 예 --> D[서버 동기화 + 캐시 준비]
+    C -- 아니오 --> E[로컬 JSON 로드 + 캐시 준비]
+    D --> F[메인 화면 렌더]
+    E --> F
+
+    F --> G[/검색어 입력/]
+    G --> H[디바운스 + 추천 계산]
+    H --> I{추천 항목 선택됨?}
+    I -- 예 --> J[선택 항목 단일 결과 렌더]
+    I -- 아니오 --> K[일반 검색 실행 + 결과 렌더]
+
+    J --> L[상세 패널 표시]
+    K --> L
+    L --> M{사용자 액션}
+    M -- 조회만 --> G
+    M -- 즐겨찾기 토글 --> N[즐겨찾기 상태 저장]
+    M -- CRUD --> O[변경 검증]
+
+    N --> P[최근 본/즐겨찾기 섹션 갱신]
+    O --> Q{검증 통과?}
+    Q -- 아니오 --> R[에러 메시지 표시]
+    R --> L
+    Q -- 예 --> S{온라인 모드}
+
+    S -- 예 --> T[서버 반영 API 호출]
+    S -- 아니오 --> U[로컬 JSON 반영]
+    T --> V[메모리 모델 갱신]
+    U --> V
+    V --> P
+    P --> W[카테고리 열린 상태 유지 + 결과 재렌더]
+    W --> G
+```
