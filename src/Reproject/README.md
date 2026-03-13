@@ -1,88 +1,88 @@
 # JAVA_WIKI Improved Version
 
-Java 학습 개념을 검색/조회/추가/수정/삭제하고, JSON 저장과 실시간 협업 채팅을 지원하는 Swing 프로젝트입니다.
+Java ?숈뒿 媛쒕뀗??寃??議고쉶/異붽?/?섏젙/??젣?섍퀬, JSON ??κ낵 ?ㅼ떆媛??묒뾽 梨꾪똿??吏?먰븯??Swing ?꾨줈?앺듃?낅땲??
 
-이번 개선의 핵심은 단순 기능 추가가 아니라, **기존 방식의 문제를 발견하고 실제 사용 흐름 기준으로 해결한 과정**입니다.
+?대쾲 媛쒖꽑???듭떖? ?⑥닚 湲곕뒫 異붽?媛 ?꾨땲?? **湲곗〈 諛⑹떇??臾몄젣瑜?諛쒓껄?섍퀬 ?ㅼ젣 ?ъ슜 ?먮쫫 湲곗??쇰줈 ?닿껐??怨쇱젙**?낅땲??
 
-## 1. 개선 배경 (기존 -> 개선)
+## 1. 媛쒖꽑 諛곌꼍 (湲곗〈 -> 媛쒖꽑)
 
-### 기존 구조의 문제
-- `data.txt` 중심 저장 방식이라 구조화/검증/확장이 어려움
-- 카테고리 버튼이 다수로 분산되어 UI 동선이 복잡함
-- 검색은 실행 후 결과 확인 방식이라 입력 중 탐색 경험이 느림
-- 검색 추천을 선택해도 유사 결과가 너무 많이 나와서 정확 탐색이 어려움
-- 한글 조합 입력(IME) 중 자동완성 이벤트와 충돌해 입력이 끊기는 현상 발생
+### 湲곗〈 援ъ“??臾몄젣
+- `data.txt` 以묒떖 ???諛⑹떇?대씪 援ъ“??寃利??뺤옣???대젮?
+- 移댄뀒怨좊━ 踰꾪듉???ㅼ닔濡?遺꾩궛?섏뼱 UI ?숈꽑??蹂듭옟??
+- 寃?됱? ?ㅽ뻾 ??寃곌낵 ?뺤씤 諛⑹떇?대씪 ?낅젰 以??먯깋 寃쏀뿕???먮┝
+- 寃??異붿쿇???좏깮?대룄 ?좎궗 寃곌낵媛 ?덈Т 留롮씠 ?섏????뺥솗 ?먯깋???대젮?
+- ?쒓? 議고빀 ?낅젰(IME) 以??먮룞?꾩꽦 ?대깽?몄? 異⑸룎???낅젰???딄린???꾩긽 諛쒖깮
 
-### 개선 방향
-- 저장 포맷을 `data.json`으로 전환
-- 카테고리 선택을 콤보박스로 단일화
-- 검색 자동완성(입력 중 추천) 도입
-- 추천 항목 선택 시 **정확히 해당 항목만** 보여주도록 검색 흐름 분리
-- IME 입력을 방해하지 않도록 키/포커스 처리 정리
+### 媛쒖꽑 諛⑺뼢
+- ????щ㎎??`data.json`?쇰줈 ?꾪솚
+- 移댄뀒怨좊━ ?좏깮??肄ㅻ낫諛뺤뒪濡??⑥씪??
+- 寃???먮룞?꾩꽦(?낅젰 以?異붿쿇) ?꾩엯
+- 異붿쿇 ??ぉ ?좏깮 ??**?뺥솗???대떦 ??ぉ留?* 蹂댁뿬二쇰룄濡?寃???먮쫫 遺꾨━
+- IME ?낅젰??諛⑺빐?섏? ?딅룄濡????ъ빱??泥섎━ ?뺣━
 
 
-## 1-1. 변경 전/후 한눈에 비교
+## 1-1. 蹂寃??????쒕늿??鍮꾧탳
 
-| 항목 | 기존 방식 | 개선 방식 | 개선 효과 |
+| ??ぉ | 湲곗〈 諛⑹떇 | 媛쒖꽑 諛⑹떇 | 媛쒖꽑 ?④낵 |
 |---|---|---|---|
-| 데이터 저장 | `data.txt` 텍스트 중심 | `data.json` 구조화 저장 | 파싱/검증/확장 용이 |
-| 카테고리 UI | 버튼 다중 배치 | `JComboBox` 단일 선택 | 화면 단순화, 동선 축소 |
-| 검색 경험 | 실행 후 결과 확인 | 입력 중 자동완성 + 추천 팝업 | 탐색 속도 향상 |
-| 추천 선택 동작 | 선택 후 유사 결과 다수 노출 | 선택 항목 1건 정확 표시 | 의도한 항목 즉시 도달 |
-| 한글 입력 안정성 | IME 조합 중 간헐적 끊김 | debounce + 이벤트 분리 | 연속 입력 안정화 |
-| 검색 결과 접근 | 카테고리 수동 확장 필요 | `Search Results` 노드 즉시 표시 | 결과 접근 시간 단축 |
-| 상세 연동 | 검색 후 추가 클릭 필요 | 추천 선택 즉시 상세 동기화 | 확인 단계 감소 |
-## 2. 이번에 추가/수정된 검색 기능
+| ?곗씠?????| `data.txt` ?띿뒪??以묒떖 | `data.json` 援ъ“?????| ?뚯떛/寃利??뺤옣 ?⑹씠 |
+| 移댄뀒怨좊━ UI | 踰꾪듉 ?ㅼ쨷 諛곗튂 | `JComboBox` ?⑥씪 ?좏깮 | ?붾㈃ ?⑥닚?? ?숈꽑 異뺤냼 |
+| 寃??寃쏀뿕 | ?ㅽ뻾 ??寃곌낵 ?뺤씤 | ?낅젰 以??먮룞?꾩꽦 + 異붿쿇 ?앹뾽 | ?먯깋 ?띾룄 ?μ긽 |
+| 異붿쿇 ?좏깮 ?숈옉 | ?좏깮 ???좎궗 寃곌낵 ?ㅼ닔 ?몄텧 | ?좏깮 ??ぉ 1嫄??뺥솗 ?쒖떆 | ?섎룄????ぉ 利됱떆 ?꾨떖 |
+| ?쒓? ?낅젰 ?덉젙??| IME 議고빀 以?媛꾪뿉???딄? | debounce + ?대깽??遺꾨━ | ?곗냽 ?낅젰 ?덉젙??|
+| 寃??寃곌낵 ?묎렐 | 移댄뀒怨좊━ ?섎룞 ?뺤옣 ?꾩슂 | `Search Results` ?몃뱶 利됱떆 ?쒖떆 | 寃곌낵 ?묎렐 ?쒓컙 ?⑥텞 |
+| ?곸꽭 ?곕룞 | 寃????異붽? ?대┃ ?꾩슂 | 異붿쿇 ?좏깮 利됱떆 ?곸꽭 ?숆린??| ?뺤씤 ?④퀎 媛먯냼 |
+## 2. ?대쾲??異붽?/?섏젙??寃??湲곕뒫
 
-### 2-1. 자동완성 추천 UI
-- `DocumentListener` + `Timer`(debounce)로 입력 중 추천 계산
-- 추천 목록은 `JPopupMenu + JList`로 표시
-- `UP/DOWN/ESC` 키로 추천 목록 탐색 가능
+### 2-1. ?먮룞?꾩꽦 異붿쿇 UI
+- `DocumentListener` + `Timer`(debounce)濡??낅젰 以?異붿쿇 怨꾩궛
+- 異붿쿇 紐⑸줉? `JPopupMenu + JList`濡??쒖떆
+- `UP/DOWN/ESC` ?ㅻ줈 異붿쿇 紐⑸줉 ?먯깋 媛??
 
-### 2-2. 추천 선택 시 정확 매칭 표시
-- 변경 전: 추천을 눌러도 `search()`가 실행되어 관련 결과가 다수 노출
-- 변경 후: 선택한 추천 항목은 `Collections.singletonList(selected)`로 렌더링하여 **1건만 표시**
+### 2-2. 異붿쿇 ?좏깮 ???뺥솗 留ㅼ묶 ?쒖떆
+- 蹂寃??? 異붿쿇???뚮윭??`search()`媛 ?ㅽ뻾?섏뼱 愿??寃곌낵媛 ?ㅼ닔 ?몄텧
+- 蹂寃??? ?좏깮??異붿쿇 ??ぉ? `Collections.singletonList(selected)`濡??뚮뜑留곹븯??**1嫄대쭔 ?쒖떆**
 
-### 2-3. 검색 결과 바로 확인
-- 검색 모드에서 트리에 `Search Results` 노드를 추가
-- 카테고리(기초/중급/고급/메서드)를 일일이 펼치지 않아도 검색 결과를 즉시 확인 가능
+### 2-3. 寃??寃곌낵 諛붾줈 ?뺤씤
+- 寃??紐⑤뱶?먯꽌 ?몃━??`Search Results` ?몃뱶瑜?異붽?
+- 移댄뀒怨좊━(湲곗큹/以묎툒/怨좉툒/硫붿꽌??瑜??쇱씪???쇱튂吏 ?딆븘??寃??寃곌낵瑜?利됱떆 ?뺤씤 媛??
 
-## 3. 실제 이슈와 해결 기록
+## 3. ?ㅼ젣 ?댁뒋? ?닿껐 湲곕줉
 
-### 이슈 A. 한글 입력이 중간에 멈춤 (`크`/`클` 이후 입력 불가)
-원인
-- 자동완성 동작 중 검색 실행/포커스 이벤트가 IME 조합 흐름에 간섭
+### ?댁뒋 A. ?쒓? ?낅젰??以묎컙??硫덉땄 (`??/`?? ?댄썑 ?낅젰 遺덇?)
+?먯씤
+- ?먮룞?꾩꽦 ?숈옉 以?寃???ㅽ뻾/?ъ빱???대깽?멸? IME 議고빀 ?먮쫫??媛꾩꽠
 
-해결
-- 자동완성은 문서 변경 시 debounce로만 갱신
-- Enter 동작을 분리: 추천이 열려 있고 선택이 있으면 추천 수락, 아니면 일반 검색
-- 프로그램적으로 텍스트를 변경할 때 `suppressAutoCompleteUpdate`로 재진입 방지
+?닿껐
+- ?먮룞?꾩꽦? 臾몄꽌 蹂寃???debounce濡쒕쭔 媛깆떊
+- Enter ?숈옉??遺꾨━: 異붿쿇???대젮 ?덇퀬 ?좏깮???덉쑝硫?異붿쿇 ?섎씫, ?꾨땲硫??쇰컲 寃??
+- ?꾨줈洹몃옩?곸쑝濡??띿뒪?몃? 蹂寃쏀븷 ??`suppressAutoCompleteUpdate`濡??ъ쭊??諛⑹?
 
-### 이슈 B. 추천 선택 시 관련 결과가 모두 노출됨
-원인
-- 추천 선택 후 일반 `performSearch()`를 호출하여 fuzzy 검색 경로를 다시 탐
+### ?댁뒋 B. 異붿쿇 ?좏깮 ??愿??寃곌낵媛 紐⑤몢 ?몄텧??
+?먯씤
+- 異붿쿇 ?좏깮 ???쇰컲 `performSearch()`瑜??몄텧?섏뿬 fuzzy 寃??寃쎈줈瑜??ㅼ떆 ??
 
-해결
-- `acceptSuggestionSelection()`에서 일반 검색을 호출하지 않고
-  `updateList(Collections.singletonList(selected), true)`로 정확 항목만 표시
-- 동시에 `displayDetail(selected)` 호출로 상세 패널 즉시 동기화
+?닿껐
+- `acceptSuggestionSelection()`?먯꽌 ?쇰컲 寃?됱쓣 ?몄텧?섏? ?딄퀬
+  `updateList(Collections.singletonList(selected), true)`濡??뺥솗 ??ぉ留??쒖떆
+- ?숈떆??`displayDetail(selected)` ?몄텧濡??곸꽭 ?⑤꼸 利됱떆 ?숆린??
 
-### 이슈 C. 검색 후 결과 확인을 위해 폴더를 계속 열어야 함
-원인
-- 검색 모드 전용 결과 노드가 없어 카테고리 트리 의존
+### ?댁뒋 C. 寃????寃곌낵 ?뺤씤???꾪빐 ?대뜑瑜?怨꾩냽 ?댁뼱????
+?먯씤
+- 寃??紐⑤뱶 ?꾩슜 寃곌낵 ?몃뱶媛 ?놁뼱 移댄뀒怨좊━ ?몃━ ?섏〈
 
-해결
-- `renderTree(List<Concept> concepts, boolean searchMode)`로 확장
-- `searchMode=true`일 때 `Search Results` 노드 생성 및 결과 배치
+?닿껐
+- `renderTree(List<Concept> concepts, boolean searchMode)`濡??뺤옣
+- `searchMode=true`????`Search Results` ?몃뱶 ?앹꽦 諛?寃곌낵 諛곗튂
 
-## 4. 코드 반영 위치
-- 메인 검색/자동완성/UI 제어: `src/Reproject/MainWikiFrame.java`
-- 검색 점수/추천 계산: `src/Reproject/SearchService.java`
-- 데이터 저장/로딩(JSON): `src/Reproject/ConceptRepository.java`
+## 4. 肄붾뱶 諛섏쁺 ?꾩튂
+- 硫붿씤 寃???먮룞?꾩꽦/UI ?쒖뼱: `src/Reproject/MainWikiFrame.java`
+- 寃???먯닔/異붿쿇 怨꾩궛: `src/Reproject/SearchService.java`
+- ?곗씠?????濡쒕뵫(JSON): `src/Reproject/ConceptRepository.java`
 
-## 5. 핵심 메서드 시퀀스
+## 5. ?듭떖 硫붿꽌???쒗??
 
-### 5-1. 입력 중 자동완성
+### 5-1. ?낅젰 以??먮룞?꾩꽦
 ```mermaid
 sequenceDiagram
     autonumber
@@ -92,28 +92,28 @@ sequenceDiagram
     participant MW as MainWikiFrame
     participant SS as SearchService
 
-    U->>SF: 키 입력
+    U->>SF: ???낅젰
     SF->>T: restart()
     T-->>MW: timeout
     MW->>SS: suggest(query, limit)
-    SS-->>MW: 추천 목록 반환
-    MW->>MW: popup list 갱신
+    SS-->>MW: 異붿쿇 紐⑸줉 諛섑솚
+    MW->>MW: popup list 媛깆떊
 ```
 
-### 5-2. 추천 선택(정확 매칭)
+### 5-2. 異붿쿇 ?좏깮(?뺥솗 留ㅼ묶)
 ```mermaid
 sequenceDiagram
     autonumber
     participant U as User
     participant MW as MainWikiFrame
 
-    U->>MW: 추천 클릭/Enter
+    U->>MW: 異붿쿇 ?대┃/Enter
     MW->>MW: acceptSuggestionSelection()
     MW->>MW: updateList(singletonList(selected), true)
     MW->>MW: displayDetail(selected)
 ```
 
-### 5-3. 일반 검색 실행 + 트리 렌더링 (`performSearch` + `renderTree`)
+### 5-3. ?쇰컲 寃???ㅽ뻾 + ?몃━ ?뚮뜑留?(`performSearch` + `renderTree`)
 ```mermaid
 sequenceDiagram
     autonumber
@@ -123,18 +123,18 @@ sequenceDiagram
     participant SS as SearchService
     participant T as JTree
 
-    U->>SF: 검색어 입력 후 Enter/검색 버튼
+    U->>SF: 寃?됱뼱 ?낅젰 ??Enter/寃??踰꾪듉
     SF-->>MW: performSearch()
-    MW->>MW: suggestionPopup 숨김
+    MW->>MW: suggestionPopup ?④?
     MW->>SS: search(keyword)
     SS-->>MW: List<Concept>
     MW->>MW: updateList(results, searchMode=true)
     MW->>MW: renderTree(concepts, searchMode)
     MW->>T: setModel(DefaultTreeModel)
-    MW->>T: expandRow() 초기 확장
+    MW->>T: expandRow() 珥덇린 ?뺤옣
 ```
 
-### 5-4. 서버 동기화 + 개념 추가 전파 (`applyServerData` + `onDataAdded`)
+### 5-4. ?쒕쾭 ?숆린??+ 媛쒕뀗 異붽? ?꾪뙆 (`applyServerData` + `onDataAdded`)
 ```mermaid
 sequenceDiagram
     autonumber
@@ -144,18 +144,18 @@ sequenceDiagram
     participant R as ConceptRepository
     participant E as ConceptEditFrame
 
-    S-->>C: 최신 Concept 목록 전송
+    S-->>C: 理쒖떊 Concept 紐⑸줉 ?꾩넚
     C-->>MW: applyServerData(concepts)
     MW->>R: replaceAll(concepts)
-    MW->>MW: 검색 상태에 따라 updateList 또는 refreshList
+    MW->>MW: 寃???곹깭???곕씪 updateList ?먮뒗 refreshList
 
     E-->>MW: onDataAdded(concept)
     MW->>R: addConcept(concept)
-    MW->>C: (온라인 모드) send("ADD", concept)
+    MW->>C: (?⑤씪??紐⑤뱶) send("ADD", concept)
     MW->>MW: refreshList()
 ```
 
-### 5-5. 현재 뷰 재계산 (`applyCurrentView`)
+### 5-5. ?꾩옱 酉??ш퀎??(`applyCurrentView`)
 ```mermaid
 sequenceDiagram
     autonumber
@@ -164,8 +164,8 @@ sequenceDiagram
     participant R as ConceptRepository
     participant SS as SearchService
 
-    U->>MW: 카테고리 변경 / 화면 갱신 트리거
-    MW->>MW: keyword 확인(searchField)
+    U->>MW: 移댄뀒怨좊━ 蹂寃?/ ?붾㈃ 媛깆떊 ?몃━嫄?
+    MW->>MW: keyword ?뺤씤(searchField)
     alt keyword is empty
         MW->>R: findAll()
     else keyword exists
@@ -174,7 +174,7 @@ sequenceDiagram
     MW->>MW: updateList(base, searchMode)
 ```
 
-### 5-6. 자동완성 갱신 분기 (`updateAutoCompleteSuggestions`)
+### 5-6. ?먮룞?꾩꽦 媛깆떊 遺꾧린 (`updateAutoCompleteSuggestions`)
 ```mermaid
 sequenceDiagram
     autonumber
@@ -182,7 +182,7 @@ sequenceDiagram
     participant SS as SearchService
     participant P as SuggestionPopup
 
-    MW->>MW: suppressAutoCompleteUpdate 확인
+    MW->>MW: suppressAutoCompleteUpdate ?뺤씤
     alt suppress=true
         MW-->>MW: return
     end
@@ -201,15 +201,15 @@ sequenceDiagram
     end
 ```
 
-### 5-7. 추천 확정 처리 (`acceptSuggestionSelection`)
+### 5-7. 異붿쿇 ?뺤젙 泥섎━ (`acceptSuggestionSelection`)
 ```mermaid
 sequenceDiagram
     autonumber
     participant U as User
     participant MW as MainWikiFrame
 
-    U->>MW: 추천 클릭/Enter
-    MW->>MW: selected 항목 확인
+    U->>MW: 異붿쿇 ?대┃/Enter
+    MW->>MW: selected ??ぉ ?뺤씤
     alt selected is null
         MW-->>MW: return
     end
@@ -221,7 +221,7 @@ sequenceDiagram
     MW->>MW: displayDetail(selected)
 ```
 
-### 5-8. 상세 패널 렌더링 (`displayDetail`)
+### 5-8. ?곸꽭 ?⑤꼸 ?뚮뜑留?(`displayDetail`)
 ```mermaid
 sequenceDiagram
     autonumber
@@ -230,59 +230,59 @@ sequenceDiagram
     participant SP as JScrollPane(detail)
 
     T-->>MW: TreeSelectionEvent(selected Concept)
-    MW->>MW: detailPanel 생성
-    MW->>MW: title/category/구분선 배치
-    MW->>MW: descriptionLines 순회
+    MW->>MW: detailPanel ?앹꽦
+    MW->>MW: title/category/援щ텇??諛곗튂
+    MW->>MW: descriptionLines ?쒗쉶
     alt heading line
-        MW->>MW: heading 스타일 적용
+        MW->>MW: heading ?ㅽ????곸슜
     else code line
-        MW->>MW: code 스타일 적용
+        MW->>MW: code ?ㅽ????곸슜
     else normal line
-        MW->>MW: body 스타일 적용
+        MW->>MW: body ?ㅽ????곸슜
     end
     MW->>SP: setViewportView(detailPanel)
     MW->>SP: scrollTop + revalidate/repaint
 ```
 
-### 5-9. 로직 프로세스 (분기 상세)
+### 5-9. 濡쒖쭅 ?꾨줈?몄뒪 (遺꾧린 ?곸꽭)
 
-#### 5-9-1. 시작부터 종료까지 전체 분기 상세도
+#### 5-9-1. ?쒖옉遺??醫낅즺源뚯? ?꾩껜 遺꾧린 ?곸꽭??
 ```mermaid
 flowchart TD
-    A([시작]) --> B([연결 확인])
-    B --> C{온라인 모드인가}
+    A([?쒖옉]) --> B([?곌껐 ?뺤씤])
+    B --> C{?⑤씪??紐⑤뱶?멸?}
 
-    C -- 예 --> D[서버 연결 및 동기화 데이터 수신]
-    C -- 아니오 --> E[로컬 JSON 로드]
-    D --> F[메인 화면 진입]
+    C -- ??--> D[?쒕쾭 ?곌껐 諛??숆린???곗씠???섏떊]
+    C -- ?꾨땲??--> E[濡쒖뺄 JSON 濡쒕뱶]
+    D --> F[硫붿씤 ?붾㈃ 吏꾩엯]
     E --> F
 
-    F --> G[/검색어 입력/]
-    G --> H[자동완성 갱신<br/>문서 변경 감지 + 디바운스]
-    H --> I{추천 항목 존재 여부}
+    F --> G[/寃?됱뼱 ?낅젰/]
+    G --> H[?먮룞?꾩꽦 媛깆떊<br/>臾몄꽌 蹂寃?媛먯? + ?붾컮?댁뒪]
+    H --> I{異붿쿇 ??ぉ 議댁옱 ?щ?}
 
-    I -- 예 --> J{추천 선택 여부}
-    J -- 예 --> K[선택 항목 1건 표시<br/>acceptSuggestionSelection]
-    J -- 아니오 --> L[일반 검색 실행<br/>performSearch]
-    I -- 아니오 --> L
+    I -- ??--> J{異붿쿇 ?좏깮 ?щ?}
+    J -- ??--> K[?좏깮 ??ぉ 1嫄??쒖떆<br/>acceptSuggestionSelection]
+    J -- ?꾨땲??--> L[?쇰컲 寃???ㅽ뻾<br/>performSearch]
+    I -- ?꾨땲??--> L
 
-    L --> M{검색 결과 존재 여부}
-    M -- 예 --> N[검색결과 노드 렌더링<br/>renderTree searchMode true]
-    M -- 아니오 --> O[유사 항목 안내<br/>getBestMatch]
+    L --> M{寃??寃곌낵 議댁옱 ?щ?}
+    M -- ??--> N[寃?됯껐怨??몃뱶 ?뚮뜑留?br/>renderTree searchMode true]
+    M -- ?꾨땲??--> O[?좎궗 ??ぉ ?덈궡<br/>getBestMatch]
 
-    K --> P[상세 패널 표시<br/>displayDetail]
+    K --> P[?곸꽭 ?⑤꼸 ?쒖떆<br/>displayDetail]
     N --> P
     O --> G
 
-    P --> Q{추가 수정 삭제 작업 여부}
-    Q -- 아니오 --> R([종료])
-    Q -- 예 --> S[저장소 반영<br/>ConceptRepository]
+    P --> Q{異붽? ?섏젙 ??젣 ?묒뾽 ?щ?}
+    Q -- ?꾨땲??--> R([醫낅즺])
+    Q -- ??--> S[??μ냼 諛섏쁺<br/>ConceptRepository]
 
-    S --> T{온라인 모드 여부}
-    T -- 예 --> U[서버 전파<br/>ADD UPDATE DELETE]
-    T -- 아니오 --> V[로컬 상태 갱신]
+    S --> T{?⑤씪??紐⑤뱶 ?щ?}
+    T -- ??--> U[?쒕쾭 ?꾪뙆<br/>ADD UPDATE DELETE]
+    T -- ?꾨땲??--> V[濡쒖뺄 ?곹깭 媛깆떊]
 
-    U --> W[목록 새로고침<br/>refreshList]
+    U --> W[紐⑸줉 ?덈줈怨좎묠<br/>refreshList]
     V --> W
     W --> G
 
@@ -297,73 +297,73 @@ flowchart TD
     class O warn;
 ```
 
-#### 5-9-2. 데이터 저장/동기화 상세 시퀀스
+#### 5-9-2. ?곗씠??????숆린???곸꽭 ?쒗??
 ```mermaid
 sequenceDiagram
     autonumber
-    participant 사용자
-    participant 편집화면
-    participant 메인화면
-    participant 저장소
-    participant 서버
+    participant ?ъ슜??
+    participant ?몄쭛?붾㈃
+    participant 硫붿씤?붾㈃
+    participant ??μ냼
+    participant ?쒕쾭
 
-    사용자->>편집화면: 개념 추가 수정 삭제 요청
-    편집화면->>메인화면: 결과 전달 onDataAdded 등
-    메인화면->>저장소: 데이터 반영 add update delete
+    ?ъ슜??>>?몄쭛?붾㈃: 媛쒕뀗 異붽? ?섏젙 ??젣 ?붿껌
+    ?몄쭛?붾㈃->>硫붿씤?붾㈃: 寃곌낵 ?꾨떖 onDataAdded ??
+    硫붿씤?붾㈃->>??μ냼: ?곗씠??諛섏쁺 add update delete
 
-    alt 온라인 모드
-        메인화면->>서버: 변경 이벤트 전송
-        서버-->>메인화면: 최신 목록 동기화
-        메인화면->>저장소: replaceAll 반영
-    else 오프라인 모드
-        메인화면->>메인화면: 로컬 상태만 갱신
+    alt ?⑤씪??紐⑤뱶
+        硫붿씤?붾㈃->>?쒕쾭: 蹂寃??대깽???꾩넚
+        ?쒕쾭-->>硫붿씤?붾㈃: 理쒖떊 紐⑸줉 ?숆린??
+        硫붿씤?붾㈃->>??μ냼: replaceAll 諛섏쁺
+    else ?ㅽ봽?쇱씤 紐⑤뱶
+        硫붿씤?붾㈃->>硫붿씤?붾㈃: 濡쒖뺄 ?곹깭留?媛깆떊
     end
 
-    메인화면->>메인화면: refreshList 실행
-    메인화면-->>사용자: 갱신된 목록 상세 화면 표시
+    硫붿씤?붾㈃->>硫붿씤?붾㈃: refreshList ?ㅽ뻾
+    硫붿씤?붾㈃-->>?ъ슜?? 媛깆떊??紐⑸줉 ?곸꽭 ?붾㈃ ?쒖떆
 ```
 
-프로세스 포인트
-- 추천 선택 경로는 일반 검색 경로와 분리되어 과검색을 방지합니다.
-- 검색 결과는 `검색결과` 노드로 우선 노출되어 카테고리 확장 없이 확인할 수 있습니다.
-- CRUD 이후 온라인 오프라인 분기에 따라 서버 전파 여부가 달라집니다.
-## 6. 실행 방법
-1. 서버 실행: `Reproject.WikiServer`
-2. 클라이언트 실행: `Reproject.WikiClient`
-3. 단독 실행(오프라인 테스트): `Reproject.Main`
+?꾨줈?몄뒪 ?ъ씤??
+- 異붿쿇 ?좏깮 寃쎈줈???쇰컲 寃??寃쎈줈? 遺꾨━?섏뼱 怨쇨??됱쓣 諛⑹??⑸땲??
+- 寃??寃곌낵??`寃?됯껐怨? ?몃뱶濡??곗꽑 ?몄텧?섏뼱 移댄뀒怨좊━ ?뺤옣 ?놁씠 ?뺤씤?????덉뒿?덈떎.
+- CRUD ?댄썑 ?⑤씪???ㅽ봽?쇱씤 遺꾧린???곕씪 ?쒕쾭 ?꾪뙆 ?щ?媛 ?щ씪吏묐땲??
+## 6. ?ㅽ뻾 諛⑸쾿
+1. ?쒕쾭 ?ㅽ뻾: `Reproject.WikiServer`
+2. ?대씪?댁뼵???ㅽ뻾: `Reproject.WikiClient`
+3. ?⑤룆 ?ㅽ뻾(?ㅽ봽?쇱씤 ?뚯뒪??: `Reproject.Main`
 
-## 7. 참고 화면
-- 메인 UI: `docs/screenshots/main-ui.png`
-- 수정/등록 UI: `docs/screenshots/edit-frame.png`
-- 코드 라인 렌더링: `docs/screenshots/code-line-rendering.png`
+## 7. 李멸퀬 ?붾㈃
+- 硫붿씤 UI: `docs/screenshots/main-ui.png`
+- ?섏젙/?깅줉 UI: `docs/screenshots/edit-frame.png`
+- 肄붾뱶 ?쇱씤 ?뚮뜑留? `docs/screenshots/code-line-rendering.png`
 
 ---
 
-## 부록. PPT 캡처용 다이어그램 (임시)
+## 遺濡? PPT 罹≪쿂???ㅼ씠?닿렇??(?꾩떆)
 
-### A. 유저 플로우 (캡처용)
+### A. ?좎? ?뚮줈??(罹≪쿂??
 ```mermaid
 flowchart LR
-    A0([사용자 시작]) --> A1[앱 실행]
-    A1 --> A2{온라인 모드}
+    A0([?ъ슜???쒖옉]) --> A1[???ㅽ뻾]
+    A1 --> A2{?⑤씪??紐⑤뱶}
 
-    A2 -- 예 --> A3[서버 연결 및 동기화]
-    A2 -- 아니오 --> A4[로컬 JSON 로드]
-    A3 --> A5[메인 진입]
+    A2 -- ??--> A3[?쒕쾭 ?곌껐 諛??숆린??
+    A2 -- ?꾨땲??--> A4[濡쒖뺄 JSON 濡쒕뱶]
+    A3 --> A5[硫붿씤 吏꾩엯]
     A4 --> A5
 
-    A5 --> B1[/검색어 입력/]
-    B1 --> B2[자동완성 확인]
-    B2 --> B3{추천 선택}
-    B3 -- 예 --> B4[정확 1건 표시]
-    B3 -- 아니오 --> B5[일반 검색]
-    B4 --> C1[상세 확인]
+    A5 --> B1[/寃?됱뼱 ?낅젰/]
+    B1 --> B2[?먮룞?꾩꽦 ?뺤씤]
+    B2 --> B3{異붿쿇 ?좏깮}
+    B3 -- ??--> B4[?뺥솗 1嫄??쒖떆]
+    B3 -- ?꾨땲??--> B5[?쇰컲 寃??
+    B4 --> C1[?곸꽭 ?뺤씤]
     B5 --> C1
 
-    C1 --> C2{수정 작업 실행}
-    C2 -- 예 --> C3[추가 수정 삭제 반영]
-    C2 -- 아니오 --> C4([종료])
-    C3 --> C5[목록 갱신]
+    C1 --> C2{?섏젙 ?묒뾽 ?ㅽ뻾}
+    C2 -- ??--> C3[異붽? ?섏젙 ??젣 諛섏쁺]
+    C2 -- ?꾨땲??--> C4([醫낅즺])
+    C3 --> C5[紐⑸줉 媛깆떊]
     C5 --> B1
 
     classDef startEnd fill:#e9f7ef,stroke:#2e7d32,color:#1b5e20,stroke-width:1.4px;
@@ -375,122 +375,121 @@ flowchart LR
     class A2,B3,C2 decision;
 ```
 
-**설명 문구 (슬라이드 우측 Description 용)**
-- 사용자는 `입력 → 선택 → 확인 → 수정` 4단계 흐름으로 학습 정보를 탐색합니다.
-- 추천 선택 경로와 일반 검색 경로를 분리해 과검색을 방지했습니다.
-- 작업 이후 즉시 목록 갱신으로 연속 탐색이 가능합니다.
+**?ㅻ챸 臾멸뎄 (?щ씪?대뱶 ?곗륫 Description ??**
+- ?ъ슜?먮뒗 `?낅젰 ???좏깮 ???뺤씤 ???섏젙` 4?④퀎 ?먮쫫?쇰줈 ?숈뒿 ?뺣낫瑜??먯깋?⑸땲??
+- 異붿쿇 ?좏깮 寃쎈줈? ?쇰컲 寃??寃쎈줈瑜?遺꾨━??怨쇨??됱쓣 諛⑹??덉뒿?덈떎.
+- ?묒뾽 ?댄썑 利됱떆 紐⑸줉 媛깆떊?쇰줈 ?곗냽 ?먯깋??媛?ν빀?덈떎.
 
-### B. 로직 프로세스 (시작~종료 전체 분기 상세, 캡처용)
+### B. 濡쒖쭅 ?꾨줈?몄뒪 (?쒖옉~醫낅즺 ?꾩껜 遺꾧린 ?곸꽭, 罹≪쿂??
 ```mermaid
 flowchart TD
-    A([시작]) --> B([연결 확인])
-    B --> C{온라인 모드인가}
+    A([?쒖옉]) --> B([?곌껐 ?뺤씤])
+    B --> C{?⑤씪??紐⑤뱶?멸?}
 
-    C -- 예 --> D[서버 연결 + 동기화 수신]
-    C -- 아니오 --> E[로컬 JSON 로드]
-    D --> F[메인 화면 진입]
+    C -- ??--> D[?쒕쾭 ?곌껐 + ?숆린???섏떊]
+    C -- ?꾨땲??--> E[濡쒖뺄 JSON 濡쒕뱶]
+    D --> F[硫붿씤 ?붾㈃ 吏꾩엯]
     E --> F
 
-    F --> G[/검색어 입력/]
-    G --> H[자동완성 갱신
+    F --> G[/寃?됱뼱 ?낅젰/]
+    G --> H[?먮룞?꾩꽦 媛깆떊
 DocumentListener + debounce]
-    H --> I{추천 항목 존재 여부}
+    H --> I{異붿쿇 ??ぉ 議댁옱 ?щ?}
 
-    I -- 예 --> J{추천 선택 여부}
-    J -- 예 --> K[선택 항목 1건 표시
+    I -- ??--> J{異붿쿇 ?좏깮 ?щ?}
+    J -- ??--> K[?좏깮 ??ぉ 1嫄??쒖떆
 acceptSuggestionSelection]
-    J -- 아니오 --> L[일반 검색 실행
+    J -- ?꾨땲??--> L[?쇰컲 寃???ㅽ뻾
 performSearch]
-    I -- 아니오 --> L
+    I -- ?꾨땲??--> L
 
-    L --> M{검색 결과 존재 여부}
-    M -- 예 --> N[검색결과 노드 렌더링
-renderTree searchMode true]
-    M -- 아니오 --> O[유사 항목 안내
+    L --> M{寃??寃곌낵 議댁옱 ?щ?}
+    M -- ??--> N[寃?됯껐怨??몃뱶 ?뚮뜑留?renderTree searchMode true]
+    M -- ?꾨땲??--> O[?좎궗 ??ぉ ?덈궡
 getBestMatch]
 
-    K --> P[상세 패널 표시
+    K --> P[?곸꽭 ?⑤꼸 ?쒖떆
 displayDetail]
     N --> P
     O --> G
 
-    P --> Q{CRUD 작업 여부}
-    Q -- 아니오 --> R([종료])
-    Q -- 예 --> S[저장소 반영
+    P --> Q{CRUD ?묒뾽 ?щ?}
+    Q -- ?꾨땲??--> R([醫낅즺])
+    Q -- ??--> S[??μ냼 諛섏쁺
 ConceptRepository]
 
-    S --> T{온라인 모드 여부}
-    T -- 예 --> U[서버 전파
+    S --> T{?⑤씪??紐⑤뱶 ?щ?}
+    T -- ??--> U[?쒕쾭 ?꾪뙆
 ADD UPDATE DELETE]
-    T -- 아니오 --> V[로컬 상태 갱신]
+    T -- ?꾨땲??--> V[濡쒖뺄 ?곹깭 媛깆떊]
 
-    U --> W[목록 새로고침
+    U --> W[紐⑸줉 ?덈줈怨좎묠
 refreshList]
     V --> W
     W --> G
 ```
 
-**설명 문구 (슬라이드 우측 Description 용)**
-- 검색 단계와 저장 단계를 분리해 로직 복잡도를 낮췄습니다.
-- 온라인/오프라인 분기로 동기화 정책을 명확히 구분했습니다.
-- 핵심 루프는 `검색 → 상세 → 작업 → 갱신`입니다.
+**?ㅻ챸 臾멸뎄 (?щ씪?대뱶 ?곗륫 Description ??**
+- 寃???④퀎? ????④퀎瑜?遺꾨━??濡쒖쭅 蹂듭옟?꾨? ??톬?듬땲??
+- ?⑤씪???ㅽ봽?쇱씤 遺꾧린濡??숆린???뺤콉??紐낇솗??援щ텇?덉뒿?덈떎.
+- ?듭떖 猷⑦봽??`寃?????곸꽭 ???묒뾽 ??媛깆떊`?낅땲??
 
-### C. 마지막 슬라이드 (캡처용 구성)
+### C. 留덉?留??щ씪?대뱶 (罹≪쿂??援ъ꽦)
 
-#### C-1. Before vs After 구조 그림
+#### C-1. Before vs After 援ъ“ 洹몃┝
 ```mermaid
 flowchart LR
-    subgraph B1[기존 방식 Before]
-        B1A[data.txt 중심 저장]
-        B1B[카테고리 버튼 분산]
-        B1C[검색 실행 후 결과 확인]
-        B1D[추천 선택 시 과검색]
+    subgraph B1[湲곗〈 諛⑹떇 Before]
+        B1A[data.txt 以묒떖 ???
+        B1B[移댄뀒怨좊━ 踰꾪듉 遺꾩궛]
+        B1C[寃???ㅽ뻾 ??寃곌낵 ?뺤씤]
+        B1D[異붿쿇 ?좏깮 ??怨쇨???
     end
 
-    B1 --> M[개선 작업]
+    B1 --> M[媛쒖꽑 ?묒뾽]
 
-    subgraph A1[개선 방식 After]
-        A1A[data.json 구조화 저장]
-        A1B[카테고리 콤보박스 단일화]
-        A1C[입력 중 자동완성 + 검색결과 노드]
-        A1D[추천 선택 시 정확 1건 표시]
+    subgraph A1[媛쒖꽑 諛⑹떇 After]
+        A1A[data.json 援ъ“?????
+        A1B[移댄뀒怨좊━ 肄ㅻ낫諛뺤뒪 ?⑥씪??
+        A1C[?낅젰 以??먮룞?꾩꽦 + 寃?됯껐怨??몃뱶]
+        A1D[異붿쿇 ?좏깮 ???뺥솗 1嫄??쒖떆]
     end
 
     M --> A1
 ```
 
-#### C-2. 마지막 장 Description 문구
-- 본 프로젝트는 저장 구조, 검색 UX, 입력 안정성을 중심으로 개선했습니다.
-- 사용자 관점에서는 탐색 단계를 줄이고, 개발 관점에서는 유지보수 가능한 구조로 전환했습니다.
-- 향후 과제로 즐겨찾기/최근 본 항목 영속화와 검색 랭킹 고도화를 계획하고 있습니다.
+#### C-2. 留덉?留???Description 臾멸뎄
+- 蹂??꾨줈?앺듃?????援ъ“, 寃??UX, ?낅젰 ?덉젙?깆쓣 以묒떖?쇰줈 媛쒖꽑?덉뒿?덈떎.
+- ?ъ슜??愿?먯뿉?쒕뒗 ?먯깋 ?④퀎瑜?以꾩씠怨? 媛쒕컻 愿?먯뿉?쒕뒗 ?좎?蹂댁닔 媛?ν븳 援ъ“濡??꾪솚?덉뒿?덈떎.
+- ?ν썑 怨쇱젣濡?利먭꺼李얘린/理쒓렐 蹂???ぉ ?곸냽?붿? 寃????궧 怨좊룄?붾? 怨꾪쉷?섍퀬 ?덉뒿?덈떎.
 
-#### C-3. 한 줄 결론
-`JAVA_WIKI는 학습 정보 탐색 경험을 빠르고 정확하게 만드는 방향으로 개선되었습니다.`
+#### C-3. ??以?寃곕줎
+`JAVA_WIKI???숈뒿 ?뺣낫 ?먯깋 寃쏀뿕??鍮좊Ⅴ怨??뺥솗?섍쾶 留뚮뱶??諛⑺뼢?쇰줈 媛쒖꽑?섏뿀?듬땲??`
 ---
 
-## 부록. PPT 캡처용 다이어그램 (최종)
+## 遺濡? PPT 罹≪쿂???ㅼ씠?닿렇??(理쒖쥌)
 
-### A. 유저 플로우 (좌→우, PPT용)
+### A. ?좎? ?뚮줈??(醫뚢넂?? PPT??
 ```mermaid
 flowchart LR
-    A([시작]) --> B[앱 실행]
-    B --> C{온라인 모드}
-    C -- 예 --> D[서버 연결 및 동기화]
-    C -- 아니오 --> E[로컬 JSON 로드]
-    D --> F[메인 진입]
+    A([?쒖옉]) --> B[???ㅽ뻾]
+    B --> C{?⑤씪??紐⑤뱶}
+    C -- ??--> D[?쒕쾭 ?곌껐 諛??숆린??
+    C -- ?꾨땲??--> E[濡쒖뺄 JSON 濡쒕뱶]
+    D --> F[硫붿씤 吏꾩엯]
     E --> F
 
-    F --> G[/검색어 입력/]
-    G --> H[추천 목록 표시]
-    H --> I{추천 항목 선택}
-    I -- 예 --> J[선택 항목 단일 결과 표시]
-    I -- 아니오 --> K[일반 검색 결과 표시]
+    F --> G[/寃?됱뼱 ?낅젰/]
+    G --> H[異붿쿇 紐⑸줉 ?쒖떆]
+    H --> I{異붿쿇 ??ぉ ?좏깮}
+    I -- ??--> J[?좏깮 ??ぉ ?⑥씪 寃곌낵 ?쒖떆]
+    I -- ?꾨땲??--> K[?쇰컲 寃??寃곌낵 ?쒖떆]
 
-    J --> L[상세 보기]
+    J --> L[?곸꽭 蹂닿린]
     K --> L
-    L --> M{추가/수정/삭제}
-    M -- 예 --> N[저장 및 목록 갱신]
-    M -- 아니오 --> O([종료])
+    L --> M{異붽?/?섏젙/??젣}
+    M -- ??--> N[???諛?紐⑸줉 媛깆떊]
+    M -- ?꾨땲??--> O([醫낅즺])
     N --> G
 
     classDef startEnd fill:#e9f7ef,stroke:#2e7d32,color:#1b5e20,stroke-width:1.4px;
@@ -501,69 +500,67 @@ flowchart LR
     class C,I,M decision;
 ```
 
-캡처 권장 설정 (PPT 선명도):
-- 브라우저 확대율 `125%~150%`에서 다이어그램 캡처
-- 캡처 이미지는 슬라이드 표시 크기의 `최소 2배` 해상도로 저장
-- PPT 삽입 후 `자르기`만 사용하고, 과도한 확대는 피하기
-- 가능하면 PNG 대신 SVG 내보내기(사용 환경 지원 시) 후 삽입
+罹≪쿂 沅뚯옣 ?ㅼ젙 (PPT ?좊챸??:
+- 釉뚮씪?곗? ?뺣???`125%~150%`?먯꽌 ?ㅼ씠?닿렇??罹≪쿂
+- 罹≪쿂 ?대?吏???щ씪?대뱶 ?쒖떆 ?ш린??`理쒖냼 2諛? ?댁긽?꾨줈 ???- PPT ?쎌엯 ??`?먮Ⅴ湲?留??ъ슜?섍퀬, 怨쇰룄???뺣????쇳븯湲?- 媛?ν븯硫?PNG ???SVG ?대낫?닿린(?ъ슜 ?섍꼍 吏???? ???쎌엯
 
-### B. 로직 프로세스 (처음~끝 전체 분기, 세로형)
+### B. 濡쒖쭅 ?꾨줈?몄뒪 (泥섏쓬~???꾩껜 遺꾧린, ?몃줈??
 ```mermaid
 flowchart TD
-    A([시작]) --> B{온라인 모드}
-    B -- 예 --> C[서버 동기화]
-    B -- 아니오 --> D[로컬 JSON 로드]
-    C --> E[메인 화면]
+    A([?쒖옉]) --> B{?⑤씪??紐⑤뱶}
+    B -- ??--> C[?쒕쾭 ?숆린??
+    B -- ?꾨땲??--> D[濡쒖뺄 JSON 濡쒕뱶]
+    C --> E[硫붿씤 ?붾㈃]
     D --> E
 
-    E --> F[/검색어 입력/]
-    F --> G[추천 목록 갱신]
-    G --> H{추천 선택 여부}
-    H -- 예 --> I[선택 항목만 결과 표시]
-    H -- 아니오 --> J[일반 검색 실행]
+    E --> F[/寃?됱뼱 ?낅젰/]
+    F --> G[異붿쿇 紐⑸줉 媛깆떊]
+    G --> H{異붿쿇 ?좏깮 ?щ?}
+    H -- ??--> I[?좏깮 ??ぉ留?寃곌낵 ?쒖떆]
+    H -- ?꾨땲??--> J[?쇰컲 寃???ㅽ뻾]
 
-    I --> K[상세 보기]
+    I --> K[?곸꽭 蹂닿린]
     J --> K
-    K --> L{CRUD 실행 여부}
-    L -- 아니오 --> M([종료])
-    L -- 예 --> N[저장 처리]
-    N --> O{온라인 모드}
-    O -- 예 --> P[서버 전파]
-    O -- 아니오 --> Q[로컬 상태 갱신]
-    P --> R[트리 갱신]
+    K --> L{CRUD ?ㅽ뻾 ?щ?}
+    L -- ?꾨땲??--> M([醫낅즺])
+    L -- ??--> N[???泥섎━]
+    N --> O{?⑤씪??紐⑤뱶}
+    O -- ??--> P[?쒕쾭 ?꾪뙆]
+    O -- ?꾨땲??--> Q[濡쒖뺄 ?곹깭 媛깆떊]
+    P --> R[?몃━ 媛깆떊]
     Q --> R
     R --> F
 ```
-### C. 로직 프로세스 (예시 스타일 반영, PPT 캡처용)
+### C. 濡쒖쭅 ?꾨줈?몄뒪 (?덉떆 ?ㅽ???諛섏쁺, PPT 罹≪쿂??
 ```mermaid
 flowchart LR
-    %% 시작/연결
-    S([시작]) --> C0([연결 확인])
-    C0 --> P0[메인 페이지 진입]
+    %% ?쒖옉/?곌껐
+    S([?쒖옉]) --> C0([?곌껐 ?뺤씤])
+    C0 --> P0[硫붿씤 ?섏씠吏 吏꾩엯]
 
-    %% 입력/추천 단계
-    P0 --> I1[/검색어 입력/]
-    I1 --> A1[추천 목록 생성]
-    A1 --> D1{추천 항목 선택?}
-    D1 -- 예 --> R1[선택 항목 단일 결과 표시]
-    D1 -- 아니오 --> R2[일반 검색 결과 표시]
+    %% ?낅젰/異붿쿇 ?④퀎
+    P0 --> I1[/寃?됱뼱 ?낅젰/]
+    I1 --> A1[異붿쿇 紐⑸줉 ?앹꽦]
+    A1 --> D1{異붿쿇 ??ぉ ?좏깮?}
+    D1 -- ??--> R1[?좏깮 ??ぉ ?⑥씪 寃곌낵 ?쒖떆]
+    D1 -- ?꾨땲??--> R2[?쇰컲 寃??寃곌낵 ?쒖떆]
 
-    %% 상세/작업 단계
-    R1 --> V1[상세 보기]
+    %% ?곸꽭/?묒뾽 ?④퀎
+    R1 --> V1[?곸꽭 蹂닿린]
     R2 --> V1
-    V1 --> D2{CRUD 실행?}
-    D2 -- 아니오 --> E([종료])
-    D2 -- 예 --> P1[저장 처리]
+    V1 --> D2{CRUD ?ㅽ뻾?}
+    D2 -- ?꾨땲??--> E([醫낅즺])
+    D2 -- ??--> P1[???泥섎━]
 
-    %% 저장 분기 (온라인/오프라인)
-    P1 --> D3{온라인 모드?}
-    D3 -- 예 --> DB1[(서버 DB 반영)]
-    D3 -- 아니오 --> DB2[(로컬 JSON 반영)]
-    DB1 --> U1[목록 갱신]
+    %% ???遺꾧린 (?⑤씪???ㅽ봽?쇱씤)
+    P1 --> D3{?⑤씪??紐⑤뱶?}
+    D3 -- ??--> DB1[(?쒕쾭 DB 諛섏쁺)]
+    D3 -- ?꾨땲??--> DB2[(濡쒖뺄 JSON 諛섏쁺)]
+    DB1 --> U1[紐⑸줉 媛깆떊]
     DB2 --> U1
     U1 --> I1
 
-    %% 스타일 (예시 그림과 유사한 도형 톤)
+    %% ?ㅽ???(?덉떆 洹몃┝怨??좎궗???꾪삎 ??
     classDef startEnd fill:#f4f7f9,stroke:#1f2933,color:#111827,stroke-width:2px;
     classDef page fill:#ffffff,stroke:#111827,color:#111827,stroke-width:2px;
     classDef input fill:#ffffff,stroke:#111827,color:#111827,stroke-width:2px;
@@ -577,42 +574,41 @@ flowchart LR
     class D1,D2,D3 decision;
     class DB1,DB2 db;
 ```
-### D. 로직 프로세스 (예시 레이아웃 최대 유사 버전, 비교용)
+### D. 濡쒖쭅 ?꾨줈?몄뒪 (?덉떆 ?덉씠?꾩썐 理쒕? ?좎궗 踰꾩쟾, 鍮꾧탳??
 ```mermaid
 flowchart LR
-    %% 좌측 메인 흐름 (예시와 유사하게 세로 체인)
+    %% 醫뚯륫 硫붿씤 ?먮쫫 (?덉떆? ?좎궗?섍쾶 ?몃줈 泥댁씤)
     subgraph L[ ]
       direction TB
-      L0([시작]) --> L1([연결])
-      L1 --> L2[메인 페이지]
-      L2 --> L3[/검색어 입력/]
-      L3 --> L4[검색 결과 페이지]
-      L4 --> L5[/상세/작업 입력/]
-      L5 --> L6{검증 통과?}
-      L6 -- 예 --> L7[처리]
-      L6 -- 아니오 --> L5
-      L7 --> L8{CRUD 요청?}
-      L8 -- 예 --> L9[저장 처리]
-      L8 -- 아니오 --> L10([종료])
+      L0([?쒖옉]) --> L1([?곌껐])
+      L1 --> L2[硫붿씤 ?섏씠吏]
+      L2 --> L3[/寃?됱뼱 ?낅젰/]
+      L3 --> L4[寃??寃곌낵 ?섏씠吏]
+      L4 --> L5[/?곸꽭/?묒뾽 ?낅젰/]
+      L5 --> L6{寃利??듦낵?}
+      L6 -- ??--> L7[泥섎━]
+      L6 -- ?꾨땲??--> L5
+      L7 --> L8{CRUD ?붿껌?}
+      L8 -- ??--> L9[???泥섎━]
+      L8 -- ?꾨땲??--> L10([醫낅즺])
     end
 
-    %% 중앙 저장소/판단 구간
-    L3 -. 추천 후보 생성 .-> DB0[(추천 인덱스)]
-    L5 -. 변경 데이터 .-> DB0
+    %% 以묒븰 ??μ냼/?먮떒 援ш컙
+    L3 -. 異붿쿇 ?꾨낫 ?앹꽦 .-> DB0[(異붿쿇 ?몃뜳??]
+    L5 -. 蹂寃??곗씠??.-> DB0
 
-    L9 --> D1{온라인 모드?}
-    D1 -- 예 --> DB1[(서버 DB)]
-    D1 -- 아니오 --> DB2[(로컬 JSON)]
+    L9 --> D1{?⑤씪??紐⑤뱶?}
+    D1 -- ??--> DB1[(?쒕쾭 DB)]
+    D1 -- ?꾨땲??--> DB2[(濡쒖뺄 JSON)]
 
-    %% 우측 후처리/종료 구간
-    DB1 --> P1[목록 갱신]
+    %% ?곗륫 ?꾩쿂由?醫낅즺 援ш컙
+    DB1 --> P1[紐⑸줉 媛깆떊]
     DB2 --> P1
-    P1 --> D2{추가 탐색?}
-    D2 -- 예 --> L3
-    D2 -- 아니오 --> L10
+    P1 --> D2{異붽? ?먯깋?}
+    D2 -- ??--> L3
+    D2 -- ?꾨땲??--> L10
 
-    %% 스타일
-    classDef startEnd fill:#f3f4f6,stroke:#111827,color:#111827,stroke-width:2px;
+    %% ?ㅽ???    classDef startEnd fill:#f3f4f6,stroke:#111827,color:#111827,stroke-width:2px;
     classDef page fill:#ffffff,stroke:#111827,color:#111827,stroke-width:2px;
     classDef input fill:#ffffff,stroke:#111827,color:#111827,stroke-width:2px;
     classDef decision fill:#eef6ff,stroke:#1d4e89,color:#0b2f57,stroke-width:2px;
@@ -626,81 +622,83 @@ flowchart LR
     class DB0,DB1,DB2 db;
 ```
 
-### E. 로직 프로세스 (Codex 제안형, 운영 관점 최적화 버전)
+### E. 濡쒖쭅 ?꾨줈?몄뒪 (Codex ?쒖븞?? ?댁쁺 愿??理쒖쟻??踰꾩쟾)
 ```mermaid
 flowchart TD
-    A([시작]) --> B[초기화: 모드/설정/데이터 소스 결정]
-    B --> C{온라인 모드}
-    C -- 예 --> D[서버 동기화 + 캐시 준비]
-    C -- 아니오 --> E[로컬 JSON 로드 + 캐시 준비]
-    D --> F[메인 화면 렌더]
+    A([?쒖옉]) --> B[珥덇린?? 紐⑤뱶/?ㅼ젙/?곗씠???뚯뒪 寃곗젙]
+    B --> C{?⑤씪??紐⑤뱶}
+    C -- ??--> D[?쒕쾭 ?숆린??+ 罹먯떆 以鍮?
+    C -- ?꾨땲??--> E[濡쒖뺄 JSON 濡쒕뱶 + 罹먯떆 以鍮?
+    D --> F[硫붿씤 ?붾㈃ ?뚮뜑]
     E --> F
 
-    F --> G[/검색어 입력/]
-    G --> H[디바운스 + 추천 계산]
-    H --> I{추천 항목 선택됨?}
-    I -- 예 --> J[선택 항목 단일 결과 렌더]
-    I -- 아니오 --> K[일반 검색 실행 + 결과 렌더]
+    F --> G[/寃?됱뼱 ?낅젰/]
+    G --> H[?붾컮?댁뒪 + 異붿쿇 怨꾩궛]
+    H --> I{異붿쿇 ??ぉ ?좏깮??}
+    I -- ??--> J[?좏깮 ??ぉ ?⑥씪 寃곌낵 ?뚮뜑]
+    I -- ?꾨땲??--> K[?쇰컲 寃???ㅽ뻾 + 寃곌낵 ?뚮뜑]
 
-    J --> L[상세 패널 표시]
+    J --> L[?곸꽭 ?⑤꼸 ?쒖떆]
     K --> L
-    L --> M{사용자 액션}
-    M -- 조회만 --> G
-    M -- 즐겨찾기 토글 --> N[즐겨찾기 상태 저장]
-    M -- CRUD --> O[변경 검증]
+    L --> M{?ъ슜???≪뀡}
+    M -- 議고쉶留?--> G
+    M -- 利먭꺼李얘린 ?좉? --> N[利먭꺼李얘린 ?곹깭 ???
+    M -- CRUD --> O[蹂寃?寃利?
 
-    N --> P[최근 본/즐겨찾기 섹션 갱신]
-    O --> Q{검증 통과?}
-    Q -- 아니오 --> R[에러 메시지 표시]
+    N --> P[理쒓렐 蹂?利먭꺼李얘린 ?뱀뀡 媛깆떊]
+    O --> Q{寃利??듦낵?}
+    Q -- ?꾨땲??--> R[?먮윭 硫붿떆吏 ?쒖떆]
     R --> L
-    Q -- 예 --> S{온라인 모드}
+    Q -- ??--> S{?⑤씪??紐⑤뱶}
 
-    S -- 예 --> T[서버 반영 API 호출]
-    S -- 아니오 --> U[로컬 JSON 반영]
-    T --> V[메모리 모델 갱신]
+    S -- ??--> T[?쒕쾭 諛섏쁺 API ?몄텧]
+    S -- ?꾨땲??--> U[濡쒖뺄 JSON 諛섏쁺]
+    T --> V[硫붾え由?紐⑤뜽 媛깆떊]
     U --> V
     V --> P
-    P --> W[카테고리 열린 상태 유지 + 결과 재렌더]
+    P --> W[移댄뀒怨좊━ ?대┛ ?곹깭 ?좎? + 寃곌낵 ?щ젋??
     W --> G
 ```
 ### F. 마지막 슬라이드 (캡처용: Before vs After + KPI)
 
 ```mermaid
 flowchart LR
-    subgraph LEFT[기존 방식 (Before)]
+    subgraph LEFT
       direction TB
+      LT[기존 방식 Before]
       L1[카테고리별 버튼 분산]
       L2[data.txt 저장]
       L3[검색 후 수동 탐색]
-      L1 --> L2 --> L3
+      LT --> L1 --> L2 --> L3
     end
 
     MID([개선 작업])
 
-    subgraph RIGHT[개선 방식 (After)]
+    subgraph RIGHT
       direction TB
+      RT[개선 방식 After]
       R1[콤보박스 단일화]
       R2[data.json 구조 저장]
       R3[자동완성 + 검색결과 노드]
-      R1 --> R2 --> R3
+      RT --> R1 --> R2 --> R3
     end
 
-    LEFT --> MID --> RIGHT
+    L3 --> MID --> RT
 
     classDef before fill:#fff1f2,stroke:#be123c,color:#881337,stroke-width:1.8px;
     classDef after fill:#ecfeff,stroke:#0e7490,color:#134e4a,stroke-width:1.8px;
     classDef mid fill:#f8fafc,stroke:#334155,color:#0f172a,stroke-width:1.8px;
 
-    class L1,L2,L3 before;
-    class R1,R2,R3 after;
+    class LT,L1,L2,L3 before;
+    class RT,R1,R2,R3 after;
     class MID mid;
 ```
 
 ```mermaid
 flowchart LR
-    K1([저장 구조\nTXT → JSON])
-    K2([검색 경로\n추천 단건 매칭])
-    K3([입력 안정성\nIME 끊김 해결])
+    K1([저장 구조: TXT -> JSON])
+    K2([검색 경로: 추천 단건 매칭])
+    K3([입력 안정성: IME 끊김 해결])
 
     classDef kpi1 fill:#eff6ff,stroke:#1d4ed8,color:#1e3a8a,stroke-width:2px;
     classDef kpi2 fill:#ecfdf5,stroke:#15803d,color:#14532d,stroke-width:2px;
@@ -713,51 +711,51 @@ flowchart LR
 
 발표용 한 줄 설명(캡처 하단 문구):
 - 기존의 버튼 분산/TXT 구조를 콤보박스+JSON 기반으로 전환하고, 자동완성과 검색결과 노드 중심 UX로 탐색 속도와 입력 안정성을 함께 개선했습니다.
+
 ### G. 마지막 슬라이드 (대형 캡처용: 고가독성 비교 버전)
 
 ```mermaid
 flowchart LR
-    subgraph BL[기존 방식 (Before)]
+    subgraph BIG_LEFT
       direction TB
+      BLT[기존 방식 Before]
       BL1[카테고리 버튼 분산]
       BL2[data.txt 저장]
       BL3[검색 후 수동 탐색]
-      BL1 --> BL2 --> BL3
+      BLT --> BL1 --> BL2 --> BL3
     end
 
     BM([개선])
 
-    subgraph BR[개선 방식 (After)]
+    subgraph BIG_RIGHT
       direction TB
+      BRT[개선 방식 After]
       BR1[콤보박스 단일화]
       BR2[data.json 구조 저장]
       BR3[자동완성 + 검색결과 노드]
-      BR1 --> BR2 --> BR3
+      BRT --> BR1 --> BR2 --> BR3
     end
 
-    BL --> BM --> BR
+    BL3 --> BM --> BRT
 
-    classDef before fill:#ffe4e6,stroke:#be123c,color:#881337,stroke-width:2.8px,font-size:20px,font-weight:bold;
-    classDef after fill:#ccfbf1,stroke:#0f766e,color:#134e4a,stroke-width:2.8px,font-size:20px,font-weight:bold;
-    classDef mid fill:#f1f5f9,stroke:#1e293b,color:#0f172a,stroke-width:2.8px,font-size:22px,font-weight:bold;
+    classDef before fill:#ffe4e6,stroke:#be123c,color:#881337,stroke-width:2.5px;
+    classDef after fill:#ccfbf1,stroke:#0f766e,color:#134e4a,stroke-width:2.5px;
+    classDef mid fill:#f1f5f9,stroke:#1e293b,color:#0f172a,stroke-width:2.5px;
 
-    class BL1,BL2,BL3 before;
-    class BR1,BR2,BR3 after;
+    class BLT,BL1,BL2,BL3 before;
+    class BRT,BR1,BR2,BR3 after;
     class BM mid;
-
-    style BL fill:#fff1f2,stroke:#be123c,stroke-width:2px
-    style BR fill:#ecfeff,stroke:#0e7490,stroke-width:2px
 ```
 
 ```mermaid
 flowchart LR
-    P1([저장 구조\nTXT → JSON])
-    P2([검색 경로\n추천 단건 매칭])
-    P3([입력 안정성\nIME 끊김 해결])
+    P1([저장 구조: TXT -> JSON])
+    P2([검색 경로: 추천 단건 매칭])
+    P3([입력 안정성: IME 끊김 해결])
 
-    classDef b1 fill:#dbeafe,stroke:#1d4ed8,color:#1e3a8a,stroke-width:3px,font-size:22px,font-weight:bold;
-    classDef b2 fill:#dcfce7,stroke:#15803d,color:#14532d,stroke-width:3px,font-size:22px,font-weight:bold;
-    classDef b3 fill:#ffedd5,stroke:#c2410c,color:#7c2d12,stroke-width:3px,font-size:22px,font-weight:bold;
+    classDef b1 fill:#dbeafe,stroke:#1d4ed8,color:#1e3a8a,stroke-width:3px;
+    classDef b2 fill:#dcfce7,stroke:#15803d,color:#14532d,stroke-width:3px;
+    classDef b3 fill:#ffedd5,stroke:#c2410c,color:#7c2d12,stroke-width:3px;
 
     class P1 b1;
     class P2 b2;
