@@ -113,6 +113,136 @@ sequenceDiagram
     MW->>MW: displayDetail(selected)
 ```
 
+### 5-3. 일반 검색 실행 + 트리 렌더링 (`performSearch` + `renderTree`)
+```mermaid
+sequenceDiagram
+    autonumber
+    participant U as User
+    participant SF as searchField
+    participant MW as MainWikiFrame
+    participant SS as SearchService
+    participant T as JTree
+
+    U->>SF: 검색어 입력 후 Enter/검색 버튼
+    SF-->>MW: performSearch()
+    MW->>MW: suggestionPopup 숨김
+    MW->>SS: search(keyword)
+    SS-->>MW: List<Concept>
+    MW->>MW: updateList(results, searchMode=true)
+    MW->>MW: renderTree(concepts, searchMode)
+    MW->>T: setModel(DefaultTreeModel)
+    MW->>T: expandRow() 초기 확장
+```
+
+### 5-4. 서버 동기화 + 개념 추가 전파 (`applyServerData` + `onDataAdded`)
+```mermaid
+sequenceDiagram
+    autonumber
+    participant S as Server
+    participant C as WikiClient
+    participant MW as MainWikiFrame
+    participant R as ConceptRepository
+    participant E as ConceptEditFrame
+
+    S-->>C: 최신 Concept 목록 전송
+    C-->>MW: applyServerData(concepts)
+    MW->>R: replaceAll(concepts)
+    MW->>MW: 검색 상태에 따라 updateList 또는 refreshList
+
+    E-->>MW: onDataAdded(concept)
+    MW->>R: addConcept(concept)
+    MW->>C: (온라인 모드) send("ADD", concept)
+    MW->>MW: refreshList()
+```
+
+### 5-5. 현재 뷰 재계산 (`applyCurrentView`)
+```mermaid
+sequenceDiagram
+    autonumber
+    participant U as User
+    participant MW as MainWikiFrame
+    participant R as ConceptRepository
+    participant SS as SearchService
+
+    U->>MW: 카테고리 변경 / 화면 갱신 트리거
+    MW->>MW: keyword 확인(searchField)
+    alt keyword is empty
+        MW->>R: findAll()
+    else keyword exists
+        MW->>SS: search(keyword)
+    end
+    MW->>MW: updateList(base, searchMode)
+```
+
+### 5-6. 자동완성 갱신 분기 (`updateAutoCompleteSuggestions`)
+```mermaid
+sequenceDiagram
+    autonumber
+    participant MW as MainWikiFrame
+    participant SS as SearchService
+    participant P as SuggestionPopup
+
+    MW->>MW: suppressAutoCompleteUpdate 확인
+    alt suppress=true
+        MW-->>MW: return
+    end
+    MW->>MW: keyword trim
+    alt keyword empty
+        MW->>P: hide
+        MW-->>MW: return
+    end
+    MW->>SS: suggest(keyword, limit)
+    alt suggested empty
+        MW->>P: hide
+        MW-->>MW: return
+    else suggested exists
+        MW->>MW: model clear/add + selectedIndex=0
+        MW->>P: show or revalidate/repaint
+    end
+```
+
+### 5-7. 추천 확정 처리 (`acceptSuggestionSelection`)
+```mermaid
+sequenceDiagram
+    autonumber
+    participant U as User
+    participant MW as MainWikiFrame
+
+    U->>MW: 추천 클릭/Enter
+    MW->>MW: selected 항목 확인
+    alt selected is null
+        MW-->>MW: return
+    end
+    MW->>MW: suppressAutoCompleteUpdate=true
+    MW->>MW: searchField.setText(selected.title)
+    MW->>MW: suppressAutoCompleteUpdate=false
+    MW->>MW: suggestionPopup hide
+    MW->>MW: updateList(singletonList(selected), true)
+    MW->>MW: displayDetail(selected)
+```
+
+### 5-8. 상세 패널 렌더링 (`displayDetail`)
+```mermaid
+sequenceDiagram
+    autonumber
+    participant T as JTree
+    participant MW as MainWikiFrame
+    participant SP as JScrollPane(detail)
+
+    T-->>MW: TreeSelectionEvent(selected Concept)
+    MW->>MW: detailPanel 생성
+    MW->>MW: title/category/구분선 배치
+    MW->>MW: descriptionLines 순회
+    alt heading line
+        MW->>MW: heading 스타일 적용
+    else code line
+        MW->>MW: code 스타일 적용
+    else normal line
+        MW->>MW: body 스타일 적용
+    end
+    MW->>SP: setViewportView(detailPanel)
+    MW->>SP: scrollTop + revalidate/repaint
+```
 ## 6. 실행 방법
 1. 서버 실행: `Reproject.WikiServer`
 2. 클라이언트 실행: `Reproject.WikiClient`

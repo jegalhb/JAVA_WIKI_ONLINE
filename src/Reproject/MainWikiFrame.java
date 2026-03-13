@@ -36,6 +36,28 @@ public class MainWikiFrame extends JFrame {
     private static final Color TEXT_MUTED = new Color(95, 108, 125);
     private static final int AUTO_COMPLETE_DELAY_MS = 180;
     private static final int AUTO_COMPLETE_LIMIT = 8;
+    private static final Icon SEARCH_RESULT_ICON = new Icon() {
+        @Override
+        public void paintIcon(Component c, Graphics g, int x, int y) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setStroke(new BasicStroke(2f));
+            g2.setColor(new Color(33, 77, 133));
+            g2.drawOval(x + 1, y + 1, 9, 9);
+            g2.drawLine(x + 9, y + 9, x + 14, y + 14);
+            g2.dispose();
+        }
+
+        @Override
+        public int getIconWidth() {
+            return 16;
+        }
+
+        @Override
+        public int getIconHeight() {
+            return 16;
+        }
+    };
 
     private final SearchService searchService;
     private final ConceptRepository repository;
@@ -475,14 +497,24 @@ public class MainWikiFrame extends JFrame {
                     label.setBackground(BG_CARD);
                     label.setForeground(TEXT_MAIN);
                 }
-            } else {
-                label.setFont(new Font("맑은 고딕", Font.BOLD, 14));
-                label.setForeground(ACCENT_DARK);
-                label.setIcon(UIManager.getIcon("FileView.directoryIcon"));
-                if (selected) {
-                    label.setBackground(new Color(226, 236, 249));
+                        } else {
+                String nodeLabel = String.valueOf(user);
+                if ("검색결과".equals(nodeLabel) || "Search Results".equals(nodeLabel)) {
+                    label.setText("검색결과 (" + node.getChildCount() + ")");
+                    label.setFont(new Font("맑은 고딕", Font.BOLD, 14));
+                    label.setIcon(SEARCH_RESULT_ICON);
+                    if (selected) {
+                        label.setForeground(Color.WHITE);
+                        label.setBackground(new Color(52, 105, 173));
+                    } else {
+                        label.setForeground(new Color(33, 77, 133));
+                        label.setBackground(new Color(231, 241, 255));
+                    }
                 } else {
-                    label.setBackground(BG_CARD);
+                    label.setFont(new Font("맑은 고딕", Font.BOLD, 14));
+                    label.setForeground(ACCENT_DARK);
+                    label.setIcon(UIManager.getIcon("FileView.directoryIcon"));
+                    label.setBackground(selected ? new Color(226, 236, 249) : BG_CARD);
                 }
             }
             return label;
@@ -596,7 +628,7 @@ public class MainWikiFrame extends JFrame {
         DefaultMutableTreeNode searchResultNode = null;
 
         if (searchMode) {
-            searchResultNode = new DefaultMutableTreeNode("Search Results");
+            searchResultNode = new DefaultMutableTreeNode("검색결과");
             root.add(searchResultNode);
         }
 
