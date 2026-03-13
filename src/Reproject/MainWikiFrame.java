@@ -234,7 +234,7 @@ public class MainWikiFrame extends JFrame {
                 detailPanel.add(Box.createVerticalStrut(10));
             } else if (isCodeLine(line)) {
                 label.setForeground(Color.BLUE);
-                label.setFont(new Font("Consolas", Font.BOLD, 15));
+                label.setFont(new Font("맑은 고딕", Font.BOLD, 15)); // 코드 설명 란 인코딩 문제 해결
             } else {
                 label.setFont(new Font("맑은 고딕", Font.PLAIN, 15));
             }
