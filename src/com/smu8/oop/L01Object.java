@@ -12,9 +12,6 @@ public class L01Object {
             String name;
             int age = 40;
         }
-
-
-
     }
     public L01Object(int a){
         // 이름이 같은데 다른 기능 : overloading == 오버로딩
@@ -27,7 +24,7 @@ public class L01Object {
     }
 
     // 4개의 정수를 받아서 4개 정수의 합을 반환
-    public int sum(int a, int b, int c, int d){ // 매개변수== a,b,c,d
+    public static int sum(int a, int b, int c, int d){ // 매개변수== a,b,c,d
         int result = 0;
         result = a+b+c+d;
         return result;
@@ -49,11 +46,10 @@ public class L01Object {
 
         L01Object= new L01Object(100); // (100) == 전달인자
         System.out.println(L01Object.a); // 100
-
         int sum = L01Object.sum(11,22,33,44);
         System.out.println(sum);
-
         L01Object person = new L01Object();
+
 
 
 

@@ -5,6 +5,14 @@ import java.util.stream.Collectors;
 
 public class SearchService {
     private final ConceptRepository repository;
+    private static final double SCORE_TITLE_CONTAINS = 10.0;
+    private static final double SCORE_TITLE_PART_SIMILARITY_WEIGHT = 8.0;
+    private static final double SCORE_TAG_CONTAINS = 5.0;
+    private static final double SCORE_TOTAL_SIMILARITY_WEIGHT = 3.0;
+    private static final double SCORE_SUGGEST_TITLE_STARTS_WITH = 20.0;
+    private static final double SCORE_SUGGEST_TITLE_CONTAINS = 8.0;
+    private static final double THRESHOLD_TITLE_PART_SIMILARITY = 0.5;
+    private static final double THRESHOLD_BEST_MATCH_SCORE = 0.5;
 
     public SearchService(ConceptRepository repository) {
         this.repository = repository;
@@ -20,7 +28,7 @@ public class SearchService {
             return repository.findAll();
         }
 
-        String lowerQuery = query.toLowerCase().trim();
+        String lowerQuery = normalizeQuery(query);
 
         return repository.findAll().stream()
                 .map(concept -> new SearchResult(concept, calculateScore(concept, lowerQuery)))
@@ -46,19 +54,19 @@ public class SearchService {
             return Collections.emptyList();
         }
 
-        String lowerQuery = query.toLowerCase().trim();
+        String lowerQuery = normalizeQuery(query);
 
         return repository.findAll().stream()
                 .map(concept -> {
-                    String title = concept.getTitle() == null ? "" : concept.getTitle().toLowerCase(Locale.ROOT);
+                    String title = normalizeText(concept.getTitle());
                     double score = calculateScore(concept, lowerQuery);
 
                     // 자동완성에서는 prefix 매칭이 사용자 기대와 가장 잘 맞는다.
                     if (title.startsWith(lowerQuery)) {
-                        score += 20.0;
+                        score += SCORE_SUGGEST_TITLE_STARTS_WITH;
                     }
                     if (title.contains(lowerQuery)) {
-                        score += 8.0;
+                        score += SCORE_SUGGEST_TITLE_CONTAINS;
                     }
                     return new SearchResult(concept, score);
                 })
@@ -72,11 +80,11 @@ public class SearchService {
     public Concept getBestMatch(String query) {
         if (query == null || query.trim().isEmpty()) return null;
 
-        String lowerQuery = query.toLowerCase().trim();
+        String lowerQuery = normalizeQuery(query);
 
         return repository.findAll().stream()
                 .map(concept -> new SearchResult(concept, calculateScore(concept, lowerQuery)))
-                .filter(result -> result.score > 0.5)
+                .filter(result -> result.score > THRESHOLD_BEST_MATCH_SCORE)
                 .max(Comparator.comparingDouble(r -> r.score))
                 .map(r -> r.concept)
                 .orElse(null);
@@ -87,31 +95,64 @@ public class SearchService {
      * 점수는 검색 정렬 기준이며, 자동완성 suggest()에서도 기본점수로 재활용한다.
      */
     private double calculateScore(Concept concept, String query) {
-        double score = 0;
-        String title = concept.getTitle().toLowerCase();
+        if (concept == null || query == null) {
+            return 0.0;
+        }
 
-        if (title.contains(query)) {
-            score += 10.0;
+        // 리팩토링 설명:
+        // 검색 점수 계산 전에 query를 한 번만 정규화한다.
+        // 이렇게 하면 null/공백/대소문자 처리가 모든 분기에서 동일하게 적용되어
+        // 조건식마다 중복 변환을 하지 않아도 되고, 비교 결과의 일관성이 보장된다.
+        String normalizedQuery = normalizeQuery(query);
+        if (normalizedQuery.isBlank()) {
+            return 0.0;
+        }
+        String title = normalizeText(concept.getTitle());
+
+        double score = 0.0;
+
+        if (title.contains(normalizedQuery)) {
+            score += SCORE_TITLE_CONTAINS;
         } else {
             String[] titleParts = title.split("\\s+");
             for (String part : titleParts) {
-                double partSim = getSimilarityRatio(part, query);
-                if (partSim > 0.5) {
-                    score += partSim * 8.0;
+                double partSim = getSimilarityRatio(part, normalizedQuery);
+                if (partSim > THRESHOLD_TITLE_PART_SIMILARITY) {
+                    score += partSim * SCORE_TITLE_PART_SIMILARITY_WEIGHT;
                 }
             }
         }
 
-        for (String tag : concept.getTags()) {
-            if (tag.toLowerCase().contains(query)) {
-                score += 5.0;
+        List<String> tags = concept.getTags();
+        if (tags != null) {
+            for (String tag : tags) {
+                if (normalizeText(tag).contains(normalizedQuery)) {
+                    score += SCORE_TAG_CONTAINS;
+                }
             }
         }
 
-        double totalSim = getSimilarityRatio(title, query);
-        score += totalSim * 3.0;
+        double totalSim = getSimilarityRatio(title, normalizedQuery);
+        score += totalSim * SCORE_TOTAL_SIMILARITY_WEIGHT;
 
         return score;
+    }
+
+
+    // 리팩토링 설명:
+    // query 정규화를 공통 메서드로 분리했다.
+    // search/suggest/getBestMatch/calculateScore가 같은 규칙(trim + 소문자)을 사용하므로
+    // 입력 전처리 기준이 한 곳에서 관리되고, 정책 변경 시 수정 지점도 1곳으로 줄어든다.
+    private String normalizeQuery(String query) {
+        return query == null ? "" : query.trim().toLowerCase(Locale.ROOT);
+    }
+
+    // 리팩토링 설명:
+    // 일반 텍스트 정규화를 공통화했다.
+    // title/tag 같은 문자열에 대해 null 안전 처리와 소문자 변환을 동일하게 적용해서
+    // NPE를 예방하고, 필드별 비교 로직의 동작 차이를 없앤다.
+    private String normalizeText(String value) {
+        return value == null ? "" : value.toLowerCase(Locale.ROOT);
     }
 
     private double getSimilarityRatio(String s1, String s2) {
@@ -119,7 +160,7 @@ public class SearchService {
         if (s1.isEmpty() && s2.isEmpty()) return 1.0;
         if (s1.isEmpty() || s2.isEmpty()) return 0.0;
 
-        int distance = computeLevenshteinDistance(s1.toLowerCase(), s2.toLowerCase());
+        int distance = computeLevenshteinDistance(normalizeText(s1), normalizeText(s2));
         return 1.0 - ((double) distance / Math.max(s1.length(), s2.length()));
     }
 
