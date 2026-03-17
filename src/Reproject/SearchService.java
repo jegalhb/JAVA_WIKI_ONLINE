@@ -32,9 +32,9 @@ public class SearchService {
 
         return repository.findAll().stream()
                 .map(concept -> new SearchResult(concept, calculateScore(concept, lowerQuery)))
-                .filter(result -> result.score > 0)
-                .sorted(Comparator.comparingDouble((SearchResult r) -> r.score).reversed())
-                .map(result -> result.concept)
+                .filter(result -> result.getScore() > 0)
+                .sorted(Comparator.comparingDouble((SearchResult r) -> r.getScore()).reversed())
+                .map(result -> result.getConcept())
                 .collect(Collectors.toList());
     }
 
@@ -70,10 +70,10 @@ public class SearchService {
                     }
                     return new SearchResult(concept, score);
                 })
-                .filter(result -> result.score > 0)
-                .sorted(Comparator.comparingDouble((SearchResult r) -> r.score).reversed())
+                .filter(result -> result.getScore() > 0)
+                .sorted(Comparator.comparingDouble((SearchResult r) -> r.getScore()).reversed())
                 .limit(limit)
-                .map(result -> result.concept)
+                .map(result -> result.getConcept())
                 .collect(Collectors.toList());
     }
 
@@ -84,9 +84,9 @@ public class SearchService {
 
         return repository.findAll().stream()
                 .map(concept -> new SearchResult(concept, calculateScore(concept, lowerQuery)))
-                .filter(result -> result.score > THRESHOLD_BEST_MATCH_SCORE)
-                .max(Comparator.comparingDouble(r -> r.score))
-                .map(r -> r.concept)
+                .filter(result -> result.getScore() > THRESHOLD_BEST_MATCH_SCORE)
+                .max(Comparator.comparingDouble(r -> r.getScore()))
+                .map(r -> r.getConcept())
                 .orElse(null);
     }
 
@@ -152,7 +152,7 @@ public class SearchService {
     // title/tag 같은 문자열에 대해 null 안전 처리와 소문자 변환을 동일하게 적용해서
     // NPE를 예방하고, 필드별 비교 로직의 동작 차이를 없앤다.
     private String normalizeText(String value) {
-        return value == null ? "" : value.toLowerCase(Locale.ROOT);
+        return value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
     }
 
     private double getSimilarityRatio(String s1, String s2) {
@@ -185,13 +185,22 @@ public class SearchService {
         return distance[lhs.length()][rhs.length()];
     }
 
+    // 리팩토링 설명: SearchResult는 검색 정렬 중간 계산값을 담는 불변 객체다.
     private static class SearchResult {
-        Concept concept;
-        double score;
+        private final Concept concept;
+        private final double score;
 
         SearchResult(Concept concept, double score) {
             this.concept = concept;
             this.score = score;
+        }
+
+        public Concept getConcept() {
+            return concept;
+        }
+
+        public double getScore() {
+            return score;
         }
     }
 }
