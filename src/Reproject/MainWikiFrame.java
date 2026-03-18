@@ -25,6 +25,8 @@ import java.util.Map;
 
 public class MainWikiFrame extends JFrame {
     private static final String[] CATEGORY_ORDER = {"기초", "중급", "고급", "메소드"};
+    private static final String CATEGORY_ALL = "전체";
+    private static final String CATEGORY_SEARCH_RESULT = "검색결과";
 
     private static final Color BG_APP = new Color(242, 246, 251);
     private static final Color BG_TOP = new Color(226, 235, 247);
@@ -67,7 +69,7 @@ public class MainWikiFrame extends JFrame {
     private JTree conceptTree;
     private JTextField searchField;
     private JComboBox<String> categoryCombo;
-    private String currentCategory = "전체";
+    private String currentCategory = CATEGORY_ALL;
 
     private JTextArea chatArea;
     private JTextField chatInput;
@@ -77,6 +79,7 @@ public class MainWikiFrame extends JFrame {
     private JPopupMenu suggestionPopup;
     private Timer autoCompleteTimer;
     private boolean suppressAutoCompleteUpdate;
+    private boolean suggestionNavigatedByKeyboard;
 
     public MainWikiFrame(SearchService searchService, ConceptRepository repository) {
         this.searchService = searchService;
@@ -127,7 +130,7 @@ public class MainWikiFrame extends JFrame {
         categoryLabel.setFont(new Font("맑은 고딕", Font.BOLD, 13));
         categoryLabel.setForeground(TEXT_MUTED);
 
-        categoryCombo = new JComboBox<>(new String[]{"전체", "기초", "중급", "고급", "메소드"});
+        categoryCombo = new JComboBox<>(new String[]{CATEGORY_ALL, "기초", "중급", "고급", "메소드", CATEGORY_SEARCH_RESULT});
         categoryCombo.setFont(new Font("맑은 고딕", Font.BOLD, 13));
         categoryCombo.setPreferredSize(new Dimension(112, 34));
         categoryCombo.setFocusable(false);
@@ -135,7 +138,6 @@ public class MainWikiFrame extends JFrame {
             currentCategory = String.valueOf(categoryCombo.getSelectedItem());
             applyCurrentView();
         });
-
         JButton addBtn = new JButton("지식 추가/수정");
         stylePrimaryButton(addBtn);
         addBtn.addActionListener(e -> new ConceptEditFrame(this, repository, getSelectedConcept()));
@@ -181,12 +183,17 @@ public class MainWikiFrame extends JFrame {
         JButton searchButton = new JButton("검색");
         styleAccentOutlineButton(searchButton);
         searchButton.addActionListener(e -> performSearch());
+        // Enter 기본 동작은 키워드 검색 실행.
+        // 단, 방향키로 자동완성 후보를 실제 탐색한 경우 Enter로 후보 선택을 허용한다.
         searchField.addActionListener(e -> {
-            if (suggestionPopup != null && suggestionPopup.isVisible() && suggestionList.getSelectedIndex() >= 0) {
+            if (suggestionPopup != null && suggestionPopup.isVisible()
+                    && suggestionNavigatedByKeyboard
+                    && suggestionList.getSelectedIndex() >= 0) {
                 acceptSuggestionSelection();
-            } else {
-                performSearch();
+                suggestionNavigatedByKeyboard = false;
+                return;
             }
+            performSearch();
         });
         getRootPane().setDefaultButton(searchButton);
         initAutoComplete();
@@ -265,6 +272,7 @@ public class MainWikiFrame extends JFrame {
                 if (!suggestionPopup.isVisible() || suggestionModel.isEmpty()) {
                     return;
                 }
+                suggestionNavigatedByKeyboard = true;
                 int current = suggestionList.getSelectedIndex();
                 int next = Math.max(0, Math.min(suggestionModel.size() - 1, current + 1));
                 suggestionList.setSelectedIndex(next);
@@ -278,6 +286,7 @@ public class MainWikiFrame extends JFrame {
                 if (!suggestionPopup.isVisible() || suggestionModel.isEmpty()) {
                     return;
                 }
+                suggestionNavigatedByKeyboard = true;
                 int current = suggestionList.getSelectedIndex();
                 int next = Math.max(0, Math.min(suggestionModel.size() - 1, current - 1));
                 suggestionList.setSelectedIndex(next);
@@ -327,6 +336,7 @@ public class MainWikiFrame extends JFrame {
             suggestionModel.addElement(c);
         }
         suggestionList.setSelectedIndex(0);
+        suggestionNavigatedByKeyboard = false;
 
         int width = Math.max(searchField.getWidth(), 360);
         suggestionPopup.setPopupSize(width, Math.min(220, 30 + (suggestionModel.size() * 28)));
@@ -338,8 +348,7 @@ public class MainWikiFrame extends JFrame {
         }
     }
 
-    // Applies the selected suggestion as an exact match and renders only that concept.
-    // This prevents fuzzy search from returning many loosely-related results.
+    // Applies the selected suggestion text to the search box and executes keyword search.
     private void acceptSuggestionSelection() {
         Concept selected = suggestionList.getSelectedValue();
         if (selected == null) {
@@ -351,8 +360,8 @@ public class MainWikiFrame extends JFrame {
         searchField.setText(selected.getTitle());
         suppressAutoCompleteUpdate = false;
         suggestionPopup.setVisible(false);
-        updateList(Collections.singletonList(selected), true);
-        displayDetail(selected);
+        suggestionNavigatedByKeyboard = false;
+        runKeywordSearch(selected.getTitle(), true);
     }
     private void stylePrimaryButton(JButton button) {
         button.setFont(new Font("맑은 고딕", Font.BOLD, 12));
@@ -615,10 +624,14 @@ public class MainWikiFrame extends JFrame {
         }
         return line;
     }
-
     private void applyCurrentView() {
         String keyword = searchField == null ? "" : searchField.getText().trim();
-        List<Concept> base = keyword.isEmpty() ? repository.findAll() : searchService.search(keyword);
+        if (CATEGORY_SEARCH_RESULT.equals(currentCategory) && keyword.isEmpty()) {
+            updateList(Collections.emptyList(), true);
+            return;
+        }
+
+        List<Concept> base = keyword.isEmpty() ? repository.findAll() : searchService.searchByKeyword(keyword);
         updateList(base, !keyword.isEmpty());
     }
 
@@ -626,27 +639,37 @@ public class MainWikiFrame extends JFrame {
         DefaultMutableTreeNode root = new DefaultMutableTreeNode("지식");
         Map<String, DefaultMutableTreeNode> categoryNodes = new LinkedHashMap<>();
         DefaultMutableTreeNode searchResultNode = null;
+        boolean onlySearchNode = CATEGORY_SEARCH_RESULT.equals(currentCategory);
 
         if (searchMode) {
             searchResultNode = new DefaultMutableTreeNode("검색결과");
             root.add(searchResultNode);
         }
 
-        for (String category : CATEGORY_ORDER) {
-            DefaultMutableTreeNode node = new DefaultMutableTreeNode(category);
-            categoryNodes.put(category, node);
-            root.add(node);
+        if (!onlySearchNode) {
+            for (String category : CATEGORY_ORDER) {
+                DefaultMutableTreeNode node = new DefaultMutableTreeNode(category);
+                categoryNodes.put(category, node);
+                root.add(node);
+            }
         }
 
         List<Concept> sorted = new ArrayList<>(concepts);
         sorted.sort(Comparator.comparing(Concept::getTitle, String.CASE_INSENSITIVE_ORDER));
 
         for (Concept concept : sorted) {
-            if (searchResultNode != null) {
+            String category = normalizeCategory(concept);
+            boolean categoryMatched = CATEGORY_ALL.equals(currentCategory)
+                    || CATEGORY_SEARCH_RESULT.equals(currentCategory)
+                    || currentCategory.equals(category);
+
+            if (searchResultNode != null && categoryMatched) {
                 searchResultNode.add(new DefaultMutableTreeNode(concept));
             }
-            String category = normalizeCategory(concept);
-            if (!"전체".equals(currentCategory) && !currentCategory.equals(category)) {
+            if (onlySearchNode) {
+                continue;
+            }
+            if (!CATEGORY_ALL.equals(currentCategory) && !currentCategory.equals(category)) {
                 continue;
             }
 
@@ -672,6 +695,9 @@ public class MainWikiFrame extends JFrame {
             scrollPane.setViewportView(empty);
             scrollPane.revalidate();
             scrollPane.repaint();
+        } else if (searchMode) {
+            // 검색 실행 직후에는 첫 결과를 자동 선택해 마우스 클릭 없이 상세를 볼 수 있게 한다.
+            selectAndDisplayFirstConcept(root);
         }
     }
 
@@ -685,6 +711,40 @@ public class MainWikiFrame extends JFrame {
         return false;
     }
 
+
+    private void selectAndDisplayFirstConcept(DefaultMutableTreeNode root) {
+        DefaultMutableTreeNode firstConceptNode = findFirstConceptNode(root);
+        if (firstConceptNode == null) {
+            return;
+        }
+
+        TreePath path = new TreePath(firstConceptNode.getPath());
+        conceptTree.setSelectionPath(path);
+        conceptTree.scrollPathToVisible(path);
+
+        Object value = firstConceptNode.getUserObject();
+        if (value instanceof Concept concept) {
+            displayDetail(concept);
+        }
+    }
+
+    private DefaultMutableTreeNode findFirstConceptNode(DefaultMutableTreeNode node) {
+        if (node == null) {
+            return null;
+        }
+        if (node.getUserObject() instanceof Concept) {
+            return node;
+        }
+
+        for (int i = 0; i < node.getChildCount(); i++) {
+            DefaultMutableTreeNode child = (DefaultMutableTreeNode) node.getChildAt(i);
+            DefaultMutableTreeNode found = findFirstConceptNode(child);
+            if (found != null) {
+                return found;
+            }
+        }
+        return null;
+    }
     private String normalizeCategory(Concept c) {
         String id = c.getId() == null ? "" : c.getId().trim().toUpperCase(Locale.ROOT);
         if (id.startsWith("M")) {
@@ -718,12 +778,25 @@ public class MainWikiFrame extends JFrame {
 
     private void performSearch() {
         String keyword = searchField.getText().trim();
-        List<Concept> results = keyword.isEmpty() ? repository.findAll() : searchService.search(keyword);
-        suggestionPopup.setVisible(false);
-        updateList(results, !keyword.isEmpty());
+        runKeywordSearch(keyword, false);
+    }
 
-        if (!keyword.isEmpty() && results.isEmpty()) {
-            Concept best = searchService.getBestMatch(keyword);
+    private void runKeywordSearch(String keyword, boolean fromSuggestionSelection) {
+        String normalizedKeyword = keyword == null ? "" : keyword.trim();
+        if (CATEGORY_SEARCH_RESULT.equals(currentCategory) && normalizedKeyword.isEmpty()) {
+            suggestionPopup.setVisible(false);
+            updateList(Collections.emptyList(), true);
+            return;
+        }
+
+        List<Concept> results = normalizedKeyword.isEmpty()
+                ? repository.findAll()
+                : searchService.searchByKeyword(normalizedKeyword);
+        suggestionPopup.setVisible(false);
+        updateList(results, !normalizedKeyword.isEmpty());
+
+        if (!fromSuggestionSelection && !normalizedKeyword.isEmpty() && results.isEmpty()) {
+            Concept best = searchService.getBestMatch(normalizedKeyword);
             if (best != null) {
                 JOptionPane.showMessageDialog(
                         this,
@@ -748,7 +821,7 @@ public class MainWikiFrame extends JFrame {
         SwingUtilities.invokeLater(() -> {
             String keyword = searchField != null ? searchField.getText().trim() : "";
             if (!keyword.isEmpty()) {
-                updateList(searchService.search(keyword), true);
+                updateList(searchService.searchByKeyword(keyword), true);
             } else {
                 refreshList();
             }
@@ -777,3 +850,4 @@ public class MainWikiFrame extends JFrame {
         refreshList();
     }
 }
+

@@ -37,7 +37,45 @@ public class SearchService {
                 .map(result -> result.getConcept())
                 .collect(Collectors.toList());
     }
+    /**
+     * 키워드 포함 검색(정확/부분일치 중심).
+     * - 제목/태그 contains 기준으로만 필터링
+     * - 유사도(레벤슈타인) 확장 없이 사용자가 입력한 단어 중심 결과를 반환
+     */
+    public List<Concept> searchByKeyword(String query) {
+        if (query == null || query.trim().isEmpty()) {
+            return repository.findAll();
+        }
 
+        String lowerQuery = normalizeQuery(query);
+
+        return repository.findAll().stream()
+                .map(concept -> {
+                    String title = normalizeText(concept.getTitle());
+                    double score = 0.0;
+
+                    if (title.startsWith(lowerQuery)) {
+                        score += 100.0;
+                    }
+                    if (title.contains(lowerQuery)) {
+                        score += 50.0;
+                    }
+
+                    List<String> tags = concept.getTags();
+                    if (tags != null) {
+                        for (String tag : tags) {
+                            if (normalizeText(tag).contains(lowerQuery)) {
+                                score += 10.0;
+                            }
+                        }
+                    }
+                    return new SearchResult(concept, score);
+                })
+                .filter(result -> result.getScore() > 0)
+                .sorted(Comparator.comparingDouble((SearchResult r) -> r.getScore()).reversed())
+                .map(SearchResult::getConcept)
+                .collect(Collectors.toList());
+    }
     /**
      * 자동완성 추천 전용 API.
      *
